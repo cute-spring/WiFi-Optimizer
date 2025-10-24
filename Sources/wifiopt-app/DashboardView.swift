@@ -1,15 +1,28 @@
 import SwiftUI
 import AppKit
 import WiFi_Optimizer
+import CoreLocation
 
 struct DashboardView: View {
     @EnvironmentObject var model: ScannerModel
+    @EnvironmentObject var location: LocationPermission
     @State private var selectedView: ViewSelection = .graph
 
     enum ViewSelection: String, CaseIterable, Identifiable {
         case graph = "Graph"
         case list = "List"
         var id: Self { self }
+    }
+
+    private var locationText: String {
+        switch location.authorizationStatus {
+        case .notDetermined: return "notDetermined"
+        case .denied: return "denied"
+        case .restricted: return "restricted"
+        case .authorizedWhenInUse: return "authorizedWhenInUse"
+        case .authorizedAlways: return "authorizedAlways"
+        @unknown default: return "unknown"
+        }
     }
 
     var body: some View {
@@ -93,6 +106,25 @@ struct DashboardView: View {
                 }
             }
             .pickerStyle(.segmented)
+
+            // Status: Location + Association
+            Text("Location: \(locationText)")
+                .font(.footnote)
+                .foregroundColor(.secondary)
+            Text("Wi‑Fi: \((model.current?.ssid == nil) ? "Not Associated" : "Associated")")
+                .font(.footnote)
+                .foregroundColor(.secondary)
+
+            if location.authorizationStatus == .denied || location.authorizationStatus == .restricted {
+                Button("Open Privacy Settings") {
+                    if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_LocationServices") {
+                        NSWorkspace.shared.open(url)
+                    }
+                }
+            }
+
+            Stepper("Interval: \(Int(model.scanInterval))s", value: $model.scanInterval, in: 1...10, step: 1)
+                .frame(width: 200)
 
             Button(model.isScanning ? "Stop" : "Start") {
                 model.isScanning ? model.stop() : model.start()
