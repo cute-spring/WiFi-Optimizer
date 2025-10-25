@@ -28,6 +28,9 @@ struct CurrentNetworkAnalysisView: View {
                 // Performance Metrics
                 performanceMetricsSection
                 
+                // Reference guide for users (five-level labels and ranges)
+                referenceGuideSection
+                
                 // Interference Factors
                 if !analysis.interferenceFactors.isEmpty { interferenceFactorsSection }
                 
@@ -226,6 +229,28 @@ struct CurrentNetworkAnalysisView: View {
         case .moderate: return .blue
         case .high: return .orange
         case .severe: return .red
+        }
+    }
+    
+    // New: five-level reference guide section for novice users
+    private var referenceGuideSection: some View {
+        SectionCard(title: "网络信息参考范围（五级）") {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("统一采用五级质量标签：很差 / 较差 / 一般 / 良好 / 卓越。")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("• RSSI：卓越 ≥ -50 dBm；良好 -60…-50；一般 -70…-60；较差 -80…-70；很差 < -80。")
+                    Text("• 噪声：卓越 < -90 dBm；良好 -90…-80；一般 -80…-70；较差 -70…-60；很差 > -60。")
+                    Text("• SNR：卓越 ≥ 25 dB；良好 20…25；一般 13…20；较差 10…13；很差 < 10。")
+                    Text("• 频段：2.4 GHz = 一般（覆盖广、干扰多）；5 GHz = 良好；6 GHz = 卓越（频谱更干净、吞吐更高）。")
+                    Text("• 信道：2.4 GHz 优先 1/6/11（卓越）；其他信道为一般；5 GHz 选择非 DFS 信道（良好）。")
+                    Text("• 带宽：20 MHz = 良好（2.4G）/ 一般（5/6G）；40 MHz = 良好；80/160 MHz = 卓越（需更干净频谱）。")
+                    Text("• 安全性：WPA3 = 卓越；WPA2 = 良好；WPA = 一般；WEP = 较差；开放网络 = 很差。")
+                }
+                .font(.caption)
+                .foregroundColor(.secondary)
+            }
         }
     }
     
