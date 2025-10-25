@@ -45,24 +45,25 @@ struct StatusChip: View {
     let title: String
     let systemImage: String?
     let color: Color
+    let fontSize: CGFloat
 
-    init(_ title: String, systemImage: String? = nil, color: Color) {
+    init(_ title: String, systemImage: String? = nil, color: Color, fontSize: CGFloat = 12) {
         self.title = title
         self.systemImage = systemImage
         self.color = color
+        self.fontSize = fontSize
     }
 
     var body: some View {
-        HStack(spacing: 6) {
-            if let image = systemImage {
-                Image(systemName: image)
-                    .font(.system(size: 13))
-                    .foregroundColor(color)
+        HStack(spacing: 4) {
+            if let icon = systemImage {
+                Image(systemName: icon)
+                    .font(.system(size: 11, weight: .semibold))
             }
             Text(title)
-                .font(.system(size: 15, weight: .semibold))
+                .font(.system(size: fontSize, weight: .semibold))
         }
-        .padding(.horizontal, 12)
+        .padding(.horizontal, 8)
         .padding(.vertical, 8)
         .background(color.opacity(0.12))
         .foregroundColor(color)

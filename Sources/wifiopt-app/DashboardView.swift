@@ -6,6 +6,7 @@ import CoreLocation
 struct DashboardView: View {
     @EnvironmentObject var model: ScannerModel
     @EnvironmentObject var location: LocationPermission
+    @EnvironmentObject var appState: AppState
     @State private var selectedView: ViewSelection = .graph
 
     enum ViewSelection: String, CaseIterable, Identifiable {
@@ -38,6 +39,17 @@ struct DashboardView: View {
 
     private var associationColor: Color {
         (model.current?.ssid == nil) ? .red : .green
+    }
+
+    private var locationFontSize: CGFloat {
+        switch location.authorizationStatus {
+        case .authorizedAlways, .authorizedWhenInUse: return 10
+        default: return 16
+        }
+    }
+
+    private var associationFontSize: CGFloat {
+        (model.current?.ssid == nil) ? 16 : 10
     }
 
     var body: some View {
@@ -89,7 +101,7 @@ struct DashboardView: View {
             }
         }
         .overlay(alignment: .topTrailing) {
-            if Debug.isEnabled() {
+            if Debug.isEnabled() && appState.isDebugPanelVisible {
                 DebugOverlay(
                     interface: model.current,
                     networksCount: model.networks.count,
@@ -121,8 +133,8 @@ struct DashboardView: View {
                 }
 
                 HStack(spacing: 10) {
-                    StatusChip("Location: \(locationText)", systemImage: "location", color: locationColor)
-                    StatusChip("Wi‑Fi: \(((model.current?.ssid == nil) ? "Not Associated" : "Associated"))", systemImage: "wifi", color: associationColor)
+                    StatusChip("Location: \(locationText)", systemImage: "location", color: locationColor, fontSize: locationFontSize)
+                    StatusChip("Wi‑Fi: \(((model.current?.ssid == nil) ? "Not Associated" : "Associated"))", systemImage: "wifi", color: associationColor, fontSize: associationFontSize)
 
                     if location.authorizationStatus == .denied || location.authorizationStatus == .restricted {
                         Button("Open Privacy Settings") {
