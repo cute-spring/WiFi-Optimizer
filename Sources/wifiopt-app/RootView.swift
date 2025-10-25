@@ -4,6 +4,7 @@ import CoreLocation
 struct RootView: View {
     @EnvironmentObject var model: ScannerModel
     @EnvironmentObject var location: LocationPermission
+    @EnvironmentObject var appState: AppState
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding: Bool = false
 
     private var needsOnboarding: Bool {
@@ -22,5 +23,6 @@ struct RootView: View {
         }
         .environmentObject(model)
         .environmentObject(location)
+        .environmentObject(appState)
     }
 }

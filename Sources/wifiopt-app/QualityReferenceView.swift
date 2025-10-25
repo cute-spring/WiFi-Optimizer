@@ -4,7 +4,7 @@ import WiFi_Optimizer
 struct QualityReferenceView: View {
     @EnvironmentObject var model: ScannerModel
 
-
+    @State private var showingHelpPopover: HelpInfo? = nil
 
     // Current network snapshot
     private var currentRSSI: Int? { model.current?.rssi }
@@ -32,6 +32,9 @@ struct QualityReferenceView: View {
                 }
             }
             .padding([.horizontal, .bottom], 12)
+            .popover(item: $showingHelpPopover) { help in
+                HelpPopoverView(title: help.title, content: help.content)
+            }
         }
     }
 
@@ -182,6 +185,16 @@ struct QualityReferenceView: View {
                 Text(label)
                     .font(.system(size: 16))
                     .foregroundColor(.secondary)
+
+                if let q = quality, !q.hint.isEmpty {
+                    Button(action: {
+                        self.showingHelpPopover = HelpInfo(title: label, content: q.hint)
+                    }) {
+                        Image(systemName: "info.circle")
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+
                 Spacer()
                 if let q = quality {
                     StatusChip(q.label, color: q.color)
@@ -485,10 +498,16 @@ struct QualityReferenceView: View {
     private func qualityForSecurity(_ sec: String) -> QualityInfo {
         let s = sec.lowercased()
         if s.contains("wpa3") { return QualityInfo(label: "卓越", color: AppTheme.qualityExcellent, reference: "参考: WPA3", hint: "最新标准，安全性最佳") }
-        if s.contains("wpa2") { return QualityInfo(label: "良好", color: AppTheme.qualityGood, reference: "参考: WPA2", hint: "常见标准，安全性可靠") }
-        if s.contains("wpa") { return QualityInfo(label: "一般", color: AppTheme.qualityFair, reference: "参考: WPA", hint: "较旧标准，建议升级") }
-        if s.contains("wep") { return QualityInfo(label: "较差", color: AppTheme.qualityPoor, reference: "参考: WEP", hint: "已不安全，强烈建议更换") }
-        if s.contains("open") { return QualityInfo(label: "很差", color: AppTheme.qualityVeryPoor, reference: "参考: 开放网络", hint: "不加密，谨慎使用") }
+        if s.contains("wpa2") { return QualityInfo(label: "良好", color: AppTheme.qualityGood, reference: "参考: WPA2", hint: "目前主流，安全性较好") }
+        if s.contains("wpa") { return QualityInfo(label: "一般", color: AppTheme.qualityFair, reference: "参考: WPA", hint: "已过时，存在安全风险") }
+        if s.contains("wep") { return QualityInfo(label: "较差", color: AppTheme.qualityPoor, reference: "参考: WEP", hint: "非常不安全，强烈建议更换") }
+        if s.contains("open") { return QualityInfo(label: "很差", color: AppTheme.qualityVeryPoor, reference: "参考: 开放", hint: "无加密，请勿传输敏感信息") }
         return QualityInfo(label: "未知", color: AppTheme.muted, reference: "参考: \(sec)", hint: "无法识别，请确认路由器设置")
     }
+}
+
+struct HelpInfo: Identifiable {
+    let id = UUID()
+    let title: String
+    let content: String
 }

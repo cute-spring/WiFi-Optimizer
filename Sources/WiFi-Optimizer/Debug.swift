@@ -1,15 +1,18 @@
 import Foundation
 
 public enum Debug {
-    private static let enabled: Bool = {
-        return ProcessInfo.processInfo.environment["WIFIOPT_DEBUG"] != nil
-    }()
-
-    public static func isEnabled() -> Bool { enabled }
+    public static func isEnabled() -> Bool {
+        #if WIFIOPT_DEBUG
+        return true
+        #else
+        return false
+        #endif
+    }
 
     public static func log(_ message: String) {
-        guard enabled else { return }
+        #if WIFIOPT_DEBUG
         let ts = ISO8601DateFormatter().string(from: Date())
         print("[WiFiOpt][\(ts)] \(message)")
+        #endif
     }
 }

@@ -21,7 +21,11 @@ if [[ "${1:-}" == "--debug" ]]; then
 fi
 
 echo "[1/6] Building $APP_NAME (debug) ..."
-swift build -c debug
+if [[ "$DEBUG_MODE" == "1" ]]; then
+  swift build -c debug -Xswiftc -DWIFIOPT_DEBUG
+else
+  swift build -c debug
+fi
 
 if [[ ! -x "$BIN_PATH" ]]; then
   echo "Error: built binary not found at $BIN_PATH" >&2
@@ -52,6 +56,8 @@ if [[ -f "$SRC_PLIST" ]]; then
   USAGE_FROM_SRC="$(read_plist_key NSLocationWhenInUseUsageDescription "$SRC_PLIST")"
   if [[ -n "${BID_FROM_SRC}" ]]; then BUNDLE_ID="${BID_FROM_SRC}"; fi
   if [[ -n "${USAGE_FROM_SRC}" ]]; then USAGE_DESC="${USAGE_FROM_SRC}"; fi
+  APP_VERSION="$(read_plist_key CFBundleShortVersionString "$SRC_PLIST")"
+  BUILD_NUMBER="$(read_plist_key CFBundleVersion "$SRC_PLIST")"
 fi
 
 echo "[4/6] Writing Info.plist into .app ..."
@@ -69,22 +75,12 @@ cat > "$CONTENTS_DIR/Info.plist" <<PLIST
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>
-  <string>1.0</string>
+  <string>${APP_VERSION:-1.0}</string>
   <key>CFBundleVersion</key>
-  <string>1</string>
+  <string>${BUILD_NUMBER:-1}</string>
   <key>NSLocationWhenInUseUsageDescription</key>
   <string>${USAGE_DESC}</string>
-$(
-  if [[ "$DEBUG_MODE" == "1" ]]; then
-    cat <<DBG
-  <key>LSEnvironment</key>
-  <dict>
-    <key>WIFIOPT_DEBUG</key>
-    <string>1</string>
-  </dict>
-DBG
-  fi
-)
+
 </dict>
 </plist>
 PLIST

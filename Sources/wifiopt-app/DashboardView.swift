@@ -6,6 +6,7 @@ import CoreLocation
 struct DashboardView: View {
     @EnvironmentObject var model: ScannerModel
     @EnvironmentObject var location: LocationPermission
+    @EnvironmentObject var appState: AppState
     @State private var selectedView: ViewSelection = .graph
 
     enum ViewSelection: String, CaseIterable, Identifiable {
@@ -40,7 +41,20 @@ struct DashboardView: View {
         (model.current?.ssid == nil) ? .red : .green
     }
 
+    private var locationFontSize: CGFloat {
+        switch location.authorizationStatus {
+        case .authorizedAlways, .authorizedWhenInUse: return 10
+        default: return 16
+        }
+    }
+
+    private var associationFontSize: CGFloat {
+        (model.current?.ssid == nil) ? 16 : 10
+    }
+
     var body: some View {
+        let _ = Debug.log("DashboardView re-rendered with isDebugPanelVisible = \(appState.isDebugPanelVisible)")
+        let _ = Debug.log("DashboardView re-rendered with isDebugPanelVisible = \(appState.isDebugPanelVisible)")
         VStack(spacing: 16) {
             header
 
@@ -68,11 +82,6 @@ struct DashboardView: View {
                     )
                     .tabItem { Text("6 GHz") }
 
-                    if let analysis = model.networkAnalysis {
-                        CurrentNetworkAnalysisView(analysis: analysis)
-                            .tabItem { Text("当前网络") }
-                    }
-
                     // New: Quality Reference tab
                     QualityReferenceView()
                         .tabItem { Text("质量参考") }
@@ -94,7 +103,7 @@ struct DashboardView: View {
             }
         }
         .overlay(alignment: .topTrailing) {
-            if Debug.isEnabled() {
+            if Debug.isEnabled() && appState.isDebugPanelVisible {
                 DebugOverlay(
                     interface: model.current,
                     networksCount: model.networks.count,
@@ -126,8 +135,8 @@ struct DashboardView: View {
                 }
 
                 HStack(spacing: 10) {
-                    StatusChip("Location: \(locationText)", systemImage: "location", color: locationColor)
-                    StatusChip("Wi‑Fi: \(((model.current?.ssid == nil) ? "Not Associated" : "Associated"))", systemImage: "wifi", color: associationColor)
+                    StatusChip("Location: \(locationText)", systemImage: "location", color: locationColor, fontSize: locationFontSize)
+                    StatusChip("Wi‑Fi: \(((model.current?.ssid == nil) ? "Not Associated" : "Associated"))", systemImage: "wifi", color: associationColor, fontSize: associationFontSize)
 
                     if location.authorizationStatus == .denied || location.authorizationStatus == .restricted {
                         Button("Open Privacy Settings") {

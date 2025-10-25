@@ -38,11 +38,30 @@ struct DebugOverlay: View {
         }
     }
 
+    private var appVersion: String {
+        Bundle.main.appVersion ?? "N/A"
+    }
+
+    private var appBuild: String {
+        Bundle.main.appBuild ?? "N/A"
+    }
+
     var body: some View {
+        let locationFontSize: CGFloat = 10
+        let associationFontSize: CGFloat = 16
+
         VStack(alignment: .leading, spacing: 6) {
             StatusChip("DEBUG MODE", systemImage: "ladybug", color: .yellow)
             
-            Text("Location: \(locationText) • Associated: \(associatedText)")
+            Text("Version: \(appVersion) (\(appBuild))")
+                .font(.system(size: 11, weight: .regular, design: .monospaced))
+                .foregroundColor(.white)
+
+            Text("FontSize: L:\(Int(locationFontSize)) A:\(Int(associationFontSize))")
+                .font(.system(size: 11, weight: .regular, design: .monospaced))
+                .foregroundColor(.white)
+
+            Text("Location: \(locationText) • Associated: \(associatedText))")
                 .font(.system(size: 11, weight: .regular, design: .monospaced))
                 .foregroundColor(.white)
             
@@ -68,5 +87,14 @@ struct DebugOverlay: View {
         .cornerRadius(10)
         .shadow(color: Color.black.opacity(0.25), radius: 6, x: 0, y: 3)
         .accessibilityIdentifier("DebugOverlay")
+    }
+}
+
+extension Bundle {
+    var appVersion: String? {
+        self.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
+    }
+    var appBuild: String? {
+        self.object(forInfoDictionaryKey: "CFBundleVersion") as? String
     }
 }

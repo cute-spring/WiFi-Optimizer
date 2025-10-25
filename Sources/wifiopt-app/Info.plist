@@ -2,9 +2,11 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>NSLocationWhenInUseUsageDescription</key>
-    <string>Wi‑Fi Optimizer uses your location to access nearby Wi‑Fi SSID names.</string>
-    <key>NSLocationUsageDescription</key>
-    <string>Wi‑Fi Optimizer requires location permission to display SSID names.</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0.0</string>
+    <key>CFBundleVersion</key>
+    <string>3</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Wi‑Fi Optimizer uses your location to access nearby Wi‑Fi SSID names.</string>
 </dict>
 </plist>
