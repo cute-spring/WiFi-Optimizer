@@ -1,4 +1,5 @@
 import SwiftUI
+import WiFi_Optimizer
 
 @main
 struct WiFiOptimizerApp: App {
@@ -7,7 +8,7 @@ struct WiFiOptimizerApp: App {
     @StateObject private var appState = AppState()
 
     var body: some Scene {
-        WindowGroup("Wi‑Fi Insight & Optimizer") {
+        Window("Wi‑Fi Insight & Optimizer", id: "main") {
             RootView()
                 .environmentObject(model)
                 .environmentObject(locationPermission)
@@ -15,12 +16,15 @@ struct WiFiOptimizerApp: App {
                 .frame(minWidth: 900, minHeight: 540)
         }
         .commands {
-            CommandGroup(after: .appInfo) {
-                Button("Toggle Debug Panel") {
+            #if WIFIOPT_DEBUG
+            CommandGroup(after: .sidebar) {
+                Divider()
+                Button("Toggle Debug Overlay") {
                     appState.isDebugPanelVisible.toggle()
                 }
-                .keyboardShortcut("d", modifiers: .command)
+                .keyboardShortcut("d", modifiers: [.command, .shift])
             }
+            #endif
         }
     }
 }

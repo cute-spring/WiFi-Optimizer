@@ -21,7 +21,11 @@ if [[ "${1:-}" == "--debug" ]]; then
 fi
 
 echo "[1/6] Building $APP_NAME (debug) ..."
-swift build -c debug
+if [[ "$DEBUG_MODE" == "1" ]]; then
+  swift build -c debug -Xswiftc -DWIFIOPT_DEBUG
+else
+  swift build -c debug
+fi
 
 if [[ ! -x "$BIN_PATH" ]]; then
   echo "Error: built binary not found at $BIN_PATH" >&2
@@ -76,17 +80,7 @@ cat > "$CONTENTS_DIR/Info.plist" <<PLIST
   <string>${BUILD_NUMBER:-1}</string>
   <key>NSLocationWhenInUseUsageDescription</key>
   <string>${USAGE_DESC}</string>
-$(
-  if [[ "$DEBUG_MODE" == "1" ]]; then
-    cat <<DBG
-  <key>LSEnvironment</key>
-  <dict>
-    <key>WIFIOPT_DEBUG</key>
-    <string>1</string>
-  </dict>
-DBG
-  fi
-)
+
 </dict>
 </plist>
 PLIST

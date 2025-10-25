@@ -53,6 +53,8 @@ struct DashboardView: View {
     }
 
     var body: some View {
+        let _ = Debug.log("DashboardView re-rendered with isDebugPanelVisible = \(appState.isDebugPanelVisible)")
+        let _ = Debug.log("DashboardView re-rendered with isDebugPanelVisible = \(appState.isDebugPanelVisible)")
         VStack(spacing: 16) {
             header
 
