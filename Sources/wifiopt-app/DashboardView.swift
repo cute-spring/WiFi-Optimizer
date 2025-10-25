@@ -68,11 +68,6 @@ struct DashboardView: View {
                     )
                     .tabItem { Text("6 GHz") }
 
-                    if let analysis = model.networkAnalysis {
-                        CurrentNetworkAnalysisView(analysis: analysis)
-                            .tabItem { Text("当前网络") }
-                    }
-
                     // New: Quality Reference tab
                     QualityReferenceView()
                         .tabItem { Text("质量参考") }
