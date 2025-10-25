@@ -64,25 +64,83 @@ struct CurrentNetworkAnalysisView: View {
 
     private func currentNetworkSection(_ network: NetworkInfo) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("网络信息").font(.subheadline).bold().foregroundColor(.primary)
+            Text("网络信息").font(.headline).bold().foregroundColor(.primary)
+            
+            // Precompute quality information for readability
+            let rssiQ = qualityForRSSI(network.rssi)
+            let noiseQ = qualityForNoise(network.noise)
+            let snrQ = qualityForSNR(network.snr)
+            let chQ = qualityForChannel(network.channel, band: network.band)
+            let bandQ = qualityForBand(network.band)
+            let bwQ = qualityForBandwidth(network.bandwidthMHz, band: network.band)
+            let secQ = qualityForSecurity(network.security)
             
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                 networkInfoItem("SSID", network.ssid ?? "未知")
-                networkInfoItem("信号强度", "\(network.rssi) dBm")
-                networkInfoItem("噪声水平", "\(network.noise) dBm")
-                networkInfoItem("信噪比", "\(network.snr) dB")
-                networkInfoItem("信道", "\(network.channel)")
-                networkInfoItem("频段", network.band.rawValue)
-                networkInfoItem("带宽", "\(network.bandwidthMHz) MHz")
-                networkInfoItem("安全性", network.security)
+                
+                networkInfoItem(
+                    "信号强度",
+                    "\(network.rssi) dBm",
+                    reference: rssiQ.reference,
+                    quality: (rssiQ.label, rssiQ.color),
+                    hint: rssiQ.hint
+                )
+                
+                networkInfoItem(
+                    "噪声水平",
+                    "\(network.noise) dBm",
+                    reference: noiseQ.reference,
+                    quality: (noiseQ.label, noiseQ.color),
+                    hint: noiseQ.hint
+                )
+                
+                networkInfoItem(
+                    "信噪比",
+                    "\(network.snr) dB",
+                    reference: snrQ.reference,
+                    quality: (snrQ.label, snrQ.color),
+                    hint: snrQ.hint
+                )
+                
+                networkInfoItem(
+                    "信道",
+                    "\(network.channel)",
+                    reference: chQ.reference,
+                    quality: (chQ.label, chQ.color),
+                    hint: chQ.hint
+                )
+                
+                networkInfoItem(
+                    "频段",
+                    network.band.rawValue,
+                    reference: bandQ.reference,
+                    quality: (bandQ.label, bandQ.color),
+                    hint: bandQ.hint
+                )
+                
+                networkInfoItem(
+                    "带宽",
+                    "\(network.bandwidthMHz) MHz",
+                    reference: bwQ.reference,
+                    quality: (bwQ.label, bwQ.color),
+                    hint: bwQ.hint
+                )
+                
+                networkInfoItem(
+                    "安全性",
+                    network.security,
+                    reference: secQ.reference,
+                    quality: (secQ.label, secQ.color),
+                    hint: secQ.hint
+                )
             }
             
             // Signal Quality Indicator
             HStack {
-                Text("信号质量:").font(.subheadline)
+                Text("信号质量:").font(.headline)
                 Spacer()
                 Text(analysis.signalQuality.rawValue)
-                    .font(.subheadline)
+                    .font(.headline)
                     .bold()
                     .foregroundColor(Color(analysis.signalQuality.color))
                     .padding(.horizontal, 8)
@@ -97,14 +155,30 @@ struct CurrentNetworkAnalysisView: View {
         }
     }
 
-    private func networkInfoItem(_ label: String, _ value: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(label)
-                .font(.caption)
-                .foregroundColor(.secondary)
+    private func networkInfoItem(_ label: String, _ value: String, reference: String? = nil, quality: (String, Color)? = nil, hint: String? = nil) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text(label)
+                    .font(.footnote)
+                    .foregroundColor(.secondary)
+                Spacer()
+                if let quality = quality {
+                    StatusChip(quality.0, color: quality.1)
+                }
+            }
             Text(value)
-                .font(.subheadline)
+                .font(.headline)
                 .bold()
+            if let reference = reference {
+                Text(reference)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            if let hint = hint {
+                Text(hint)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(10)
@@ -233,5 +307,112 @@ struct CurrentNetworkAnalysisView: View {
         case .medium: return .orange
         case .low: return .blue
         }
+    }
+}
+
+private struct QualityInfo {
+    let label: String
+    let color: Color
+    let reference: String
+    let hint: String
+}
+
+private func qualityForRSSI(_ rssi: Int) -> QualityInfo {
+    switch rssi {
+    case let x where x >= -50:
+        return QualityInfo(label: "卓越", color: AppTheme.qualityExcellent, reference: "参考: >= -50 dBm", hint: "非常强的信号，适合高带宽活动")
+    case -60..<(-50):
+        return QualityInfo(label: "良好", color: AppTheme.qualityGood, reference: "参考: -60…-50 dBm", hint: "稳定连接，流媒体/会议通常可靠")
+    case -70..<(-60):
+        return QualityInfo(label: "一般", color: AppTheme.qualityFair, reference: "参考: -70…-60 dBm", hint: "轻度使用可，可能出现卡顿")
+    case -80..<(-70):
+        return QualityInfo(label: "较差", color: AppTheme.qualityPoor, reference: "参考: -80…-70 dBm", hint: "建议靠近路由器或优化布置")
+    default:
+        return QualityInfo(label: "很差", color: AppTheme.qualityVeryPoor, reference: "参考: < -80 dBm", hint: "连接不稳定，建议改善覆盖")
+    }
+}
+
+private func qualityForNoise(_ noise: Int) -> QualityInfo {
+    switch noise {
+    case ..<(-90):
+        return QualityInfo(label: "卓越", color: AppTheme.qualityExcellent, reference: "参考: < -90 dBm", hint: "极低噪声，环境非常干净")
+    case -90...(-80):
+        return QualityInfo(label: "良好", color: AppTheme.qualityGood, reference: "参考: -90…-80 dBm", hint: "低噪声，网络表现稳定")
+    case -80...(-70):
+        return QualityInfo(label: "一般", color: AppTheme.qualityFair, reference: "参考: -80…-70 dBm", hint: "中等噪声，可能影响吞吐")
+    case -70...(-60):
+        return QualityInfo(label: "较差", color: AppTheme.qualityPoor, reference: "参考: -70…-60 dBm", hint: "噪声偏高，建议优化环境/信道")
+    default:
+        return QualityInfo(label: "很差", color: AppTheme.qualityVeryPoor, reference: "参考: > -60 dBm", hint: "噪声很高，强烈建议更换信道/调整设备")
+    }
+}
+
+private func qualityForSNR(_ snr: Int) -> QualityInfo {
+    switch snr {
+    case let x where x >= 25:
+        return QualityInfo(label: "卓越", color: AppTheme.qualityExcellent, reference: "参考: ≥ 25 dB", hint: "链路质量极佳")
+    case 20..<25:
+        return QualityInfo(label: "良好", color: AppTheme.qualityGood, reference: "参考: 20…25 dB", hint: "多数场景下表现良好")
+    case 13..<20:
+        return QualityInfo(label: "一般", color: AppTheme.qualityFair, reference: "参考: 13…20 dB", hint: "轻度干扰，吞吐下降")
+    case 10..<13:
+        return QualityInfo(label: "较差", color: AppTheme.qualityPoor, reference: "参考: 10…13 dB", hint: "易丢包/卡顿，需优化")
+    default:
+        return QualityInfo(label: "很差", color: AppTheme.qualityVeryPoor, reference: "参考: < 10 dB", hint: "几乎不可用，建议靠近或换信道")
+    }
+}
+
+private func qualityForBand(_ band: WiFiBand) -> QualityInfo {
+    switch band {
+    case .twoPointFourGHz:
+        return QualityInfo(label: "一般", color: AppTheme.qualityFair, reference: "参考: 干扰多，覆盖广", hint: "建议仅用于低速设备或远距离覆盖")
+    case .fiveGHz:
+        return QualityInfo(label: "良好", color: AppTheme.qualityGood, reference: "参考: 干扰少，速度高", hint: "中近距离下优选，兼顾速度与稳定")
+    case .sixGHz:
+        return QualityInfo(label: "卓越", color: AppTheme.qualityExcellent, reference: "参考: 极低干扰，超高吞吐", hint: "需设备支持，最佳体验")
+    }
+}
+
+private func qualityForBandwidth(_ bw: Int, band: WiFiBand) -> QualityInfo {
+    switch bw {
+    case 20:
+        let label = (band == .twoPointFourGHz) ? "良好" : "一般"
+        let color: Color = (band == .twoPointFourGHz) ? AppTheme.qualityGood : AppTheme.qualityFair
+        let hint = (band == .twoPointFourGHz) ? "2.4G 建议 20MHz 以减少重叠" : "有利于远距/墙体穿透，但吞吐较低"
+        return QualityInfo(label: label, color: color, reference: "参考: 20 MHz", hint: hint)
+    case 40:
+        return QualityInfo(label: "良好", color: AppTheme.qualityGood, reference: "参考: 40 MHz", hint: "在较干净环境下提升吞吐")
+    case 80:
+        return QualityInfo(label: "卓越", color: AppTheme.qualityExcellent, reference: "参考: 80 MHz", hint: "5G 下常见，高吞吐")
+    case 160:
+        return QualityInfo(label: "卓越", color: AppTheme.qualityExcellent, reference: "参考: 160 MHz", hint: "需要干净频谱，可能涉及 DFS 信道")
+    default:
+        return QualityInfo(label: "一般", color: AppTheme.qualityFair, reference: "参考: \(bw) MHz", hint: "带宽与环境/设备能力相关")
+    }
+}
+
+private func qualityForSecurity(_ sec: String) -> QualityInfo {
+    let s = sec.lowercased()
+    if s.contains("wpa3") { return QualityInfo(label: "卓越", color: AppTheme.qualityExcellent, reference: "参考: WPA3", hint: "最新标准，安全性最佳") }
+    if s.contains("wpa2") { return QualityInfo(label: "良好", color: AppTheme.qualityGood, reference: "参考: WPA2", hint: "常见标准，安全性可靠") }
+    if s.contains("wpa") { return QualityInfo(label: "一般", color: AppTheme.qualityFair, reference: "参考: WPA", hint: "较旧标准，建议升级") }
+    if s.contains("wep") { return QualityInfo(label: "较差", color: AppTheme.qualityPoor, reference: "参考: WEP", hint: "已不安全，强烈建议更换") }
+    if s.contains("open") { return QualityInfo(label: "很差", color: AppTheme.qualityVeryPoor, reference: "参考: 开放网络", hint: "不加密，谨慎使用") }
+    return QualityInfo(label: "未知", color: AppTheme.muted, reference: "参考: \(sec)", hint: "无法识别，请确认路由器设置")
+}
+
+private func qualityForChannel(_ ch: Int, band: WiFiBand) -> QualityInfo {
+    switch band {
+    case .twoPointFourGHz:
+        let preferred = [1,6,11]
+        if preferred.contains(ch) {
+            return QualityInfo(label: "卓越", color: AppTheme.qualityExcellent, reference: "参考: 1/6/11", hint: "减少重叠与互扰")
+        } else {
+            return QualityInfo(label: "一般", color: AppTheme.qualityFair, reference: "参考: 1/6/11 优先", hint: "可能与邻居重叠，建议调整")
+        }
+    case .fiveGHz:
+        return QualityInfo(label: "良好", color: AppTheme.qualityGood, reference: "参考: 36–165 (非 DFS 优先)", hint: "尽量避开拥挤信道")
+    case .sixGHz:
+        return QualityInfo(label: "卓越", color: AppTheme.qualityExcellent, reference: "参考: 6G 信道", hint: "干扰极低，吞吐高")
     }
 }

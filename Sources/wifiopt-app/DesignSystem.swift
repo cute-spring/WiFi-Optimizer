@@ -7,6 +7,14 @@ struct AppTheme {
     static let cardPadding: CGFloat = 12
     static let sectionSpacing: CGFloat = 16
     static let shadowRadius: CGFloat = 4
+    
+    // Brand palette for quality levels (centralized)
+    static let qualityVeryPoor: Color = Color(red: 0.90, green: 0.22, blue: 0.22) // red
+    static let qualityPoor: Color = Color(red: 0.96, green: 0.62, blue: 0.18)     // orange
+    static let qualityFair: Color = Color(red: 0.96, green: 0.86, blue: 0.24)     // yellow
+    static let qualityGood: Color = Color(red: 0.28, green: 0.63, blue: 0.99)     // blue
+    static let qualityExcellent: Color = Color(red: 0.22, green: 0.78, blue: 0.38) // green
+    static let muted: Color = Color.gray
 }
 
 struct SectionCard<Content: View>: View {
