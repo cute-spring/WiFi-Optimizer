@@ -28,7 +28,10 @@ struct SectionCard<Content: View>: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            if let t = title { Text(t).font(.headline).bold() }
+            if let t = title {
+                Text(t)
+                    .font(.system(size: 20, weight: .bold))
+            }
             content
         }
         .padding(AppTheme.cardPadding)
@@ -53,15 +56,14 @@ struct StatusChip: View {
         HStack(spacing: 6) {
             if let image = systemImage {
                 Image(systemName: image)
-                    .font(.caption)
+                    .font(.system(size: 13))
                     .foregroundColor(color)
             }
             Text(title)
-                .font(.caption)
-                .fontWeight(.semibold)
+                .font(.system(size: 15, weight: .semibold))
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
         .background(color.opacity(0.12))
         .foregroundColor(color)
         .clipShape(Capsule())

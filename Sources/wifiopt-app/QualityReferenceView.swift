@@ -3,7 +3,6 @@ import WiFi_Optimizer
 
 struct QualityReferenceView: View {
     @EnvironmentObject var model: ScannerModel
-    @EnvironmentObject var prefs: UserPreferences
 
 
 
@@ -67,39 +66,54 @@ struct QualityReferenceView: View {
 
 
     @ViewBuilder private var rssiCard: some View {
-        SectionCard(title: "RSSI（信号强度）") {
-            referenceGrid(rows: [
-                RowData(label: "卓越", value: "≥ -50 dBm", color: AppTheme.qualityExcellent, highlight: isCurrentRSSILabel("卓越")),
-                RowData(label: "良好", value: "-60 … -50 dBm", color: AppTheme.qualityGood, highlight: isCurrentRSSILabel("良好")),
-                RowData(label: "一般", value: "-70 … -60 dBm", color: AppTheme.qualityFair, highlight: isCurrentRSSILabel("一般")),
-                RowData(label: "较差", value: "-80 … -70 dBm", color: AppTheme.qualityPoor, highlight: isCurrentRSSILabel("较差")),
-                RowData(label: "很差", value: "< -80 dBm", color: AppTheme.qualityVeryPoor, highlight: isCurrentRSSILabel("很差"))
-            ])
-        }
+        let levels: [QualityLevel] = [
+            .init(label: "卓越", range: "≥ -50 dBm", color: AppTheme.qualityExcellent, highlight: isCurrentRSSILabel("卓越")),
+            .init(label: "良好", range: "-60 … -50 dBm", color: AppTheme.qualityGood, highlight: isCurrentRSSILabel("良好")),
+            .init(label: "一般", range: "-70 … -60 dBm", color: AppTheme.qualityFair, highlight: isCurrentRSSILabel("一般")),
+            .init(label: "较差", range: "-80 … -70 dBm", color: AppTheme.qualityPoor, highlight: isCurrentRSSILabel("较差")),
+            .init(label: "很差", range: "< -80 dBm", color: AppTheme.qualityVeryPoor, highlight: isCurrentRSSILabel("很差"))
+        ]
+        SegmentedBarCard(
+            title: "RSSI（信号强度）",
+            value: currentRSSI,
+            unit: "dBm",
+            levels: levels,
+            description: "信号强度越高越好。优秀的信号是Wi-Fi速度和稳定性的基础。"
+        )
     }
 
     @ViewBuilder private var noiseCard: some View {
-        SectionCard(title: "噪声（Noise）") {
-            referenceGrid(rows: [
-                RowData(label: "卓越", value: "< -90 dBm", color: AppTheme.qualityExcellent, highlight: isCurrentNoiseLabel("卓越")),
-                RowData(label: "良好", value: "-90 … -80 dBm", color: AppTheme.qualityGood, highlight: isCurrentNoiseLabel("良好")),
-                RowData(label: "一般", value: "-80 … -70 dBm", color: AppTheme.qualityFair, highlight: isCurrentNoiseLabel("一般")),
-                RowData(label: "较差", value: "-70 … -60 dBm", color: AppTheme.qualityPoor, highlight: isCurrentNoiseLabel("较差")),
-                RowData(label: "很差", value: "> -60 dBm", color: AppTheme.qualityVeryPoor, highlight: isCurrentNoiseLabel("很差"))
-            ])
-        }
+        let levels: [QualityLevel] = [
+            .init(label: "卓越", range: "< -90 dBm", color: AppTheme.qualityExcellent, highlight: isCurrentNoiseLabel("卓越")),
+            .init(label: "良好", range: "-90 … -80 dBm", color: AppTheme.qualityGood, highlight: isCurrentNoiseLabel("良好")),
+            .init(label: "一般", range: "-80 … -70 dBm", color: AppTheme.qualityFair, highlight: isCurrentNoiseLabel("一般")),
+            .init(label: "较差", range: "-70 … -60 dBm", color: AppTheme.qualityPoor, highlight: isCurrentNoiseLabel("较差")),
+            .init(label: "很差", range: "> -60 dBm", color: AppTheme.qualityVeryPoor, highlight: isCurrentNoiseLabel("很差"))
+        ]
+        SegmentedBarCard(
+            title: "噪声（Noise）",
+            value: currentNoise,
+            unit: "dBm",
+            levels: levels,
+            description: "噪声越低越好。高噪声会干扰Wi-Fi信号，导致性能下降。"
+        )
     }
 
     @ViewBuilder private var snrCard: some View {
-        SectionCard(title: "SNR（信噪比）") {
-            referenceGrid(rows: [
-                RowData(label: "卓越", value: "≥ 25 dB", color: AppTheme.qualityExcellent, highlight: isCurrentSNRLabel("卓越")),
-                RowData(label: "良好", value: "20 … 25 dB", color: AppTheme.qualityGood, highlight: isCurrentSNRLabel("良好")),
-                RowData(label: "一般", value: "13 … 20 dB", color: AppTheme.qualityFair, highlight: isCurrentSNRLabel("一般")),
-                RowData(label: "较差", value: "10 … 13 dB", color: AppTheme.qualityPoor, highlight: isCurrentSNRLabel("较差")),
-                RowData(label: "很差", value: "< 10 dB", color: AppTheme.qualityVeryPoor, highlight: isCurrentSNRLabel("很差"))
-            ])
-        }
+        let levels: [QualityLevel] = [
+            .init(label: "卓越", range: "≥ 25 dB", color: AppTheme.qualityExcellent, highlight: isCurrentSNRLabel("卓越")),
+            .init(label: "良好", range: "20 … 25 dB", color: AppTheme.qualityGood, highlight: isCurrentSNRLabel("良好")),
+            .init(label: "一般", range: "13 … 20 dB", color: AppTheme.qualityFair, highlight: isCurrentSNRLabel("一般")),
+            .init(label: "较差", range: "10 … 13 dB", color: AppTheme.qualityPoor, highlight: isCurrentSNRLabel("较差")),
+            .init(label: "很差", range: "< 10 dB", color: AppTheme.qualityVeryPoor, highlight: isCurrentSNRLabel("很差"))
+        ]
+        SegmentedBarCard(
+            title: "SNR（信噪比）",
+            value: currentSNR,
+            unit: "dB",
+            levels: levels,
+            description: "信噪比越高越好。它直接反映了信号与噪声的差距，是衡量链路质量的关键指标。"
+        )
     }
 
     @ViewBuilder private var bandCard: some View {
@@ -110,10 +124,10 @@ struct QualityReferenceView: View {
                 RowData(label: "卓越", value: "6 GHz", color: AppTheme.qualityExcellent, highlight: currentBand == .sixGHz)
             ])
             Text("注：部分地区 DFS 信道受雷达检测影响，可能临时不可用")
-                .font(.system(size: 14 * prefs.fontScale))
+                .font(.system(size: 14))
                 .foregroundColor(.secondary)
             Text("说明：2.4G 覆盖广但干扰多；5G 干扰少速度高；6G 干扰极低、吞吐最高（需设备支持）")
-                .font(.system(size: 14 * prefs.fontScale))
+                .font(.system(size: 14))
                 .foregroundColor(.secondary)
         }
     }
@@ -127,7 +141,7 @@ struct QualityReferenceView: View {
                 RowData(label: "卓越", value: "6 GHz", color: AppTheme.qualityExcellent, highlight: (currentBand == .sixGHz))
             ])
             Text("说明：合理选择信道可显著降低重叠与互扰；DFS 信道可能受雷达占用限制")
-                .font(.system(size: 14 * prefs.fontScale))
+                .font(.system(size: 14))
                 .foregroundColor(.secondary)
         }
     }
@@ -141,7 +155,7 @@ struct QualityReferenceView: View {
                 RowData(label: "卓越", value: "80 / 160 MHz", color: AppTheme.qualityExcellent, highlight: currentBandwidth == 80 || currentBandwidth == 160)
             ])
             Text("说明：带宽越大吞吐越高，但更易受干扰；2.4G 通常建议 20MHz 以减少重叠")
-                .font(.system(size: 14 * prefs.fontScale))
+                .font(.system(size: 14))
                 .foregroundColor(.secondary)
         }
     }
@@ -156,7 +170,7 @@ struct QualityReferenceView: View {
                 RowData(label: "很差", value: "开放（Open）", color: AppTheme.qualityVeryPoor, highlight: matchesSecurity("open"))
             ])
             Text("说明：未知或无法识别的加密方式保持灰色，仅供参考")
-                .font(.system(size: 14 * prefs.fontScale))
+                .font(.system(size: 14))
                 .foregroundColor(.secondary)
         }
     }
@@ -166,7 +180,7 @@ struct QualityReferenceView: View {
         VStack(alignment: .leading, spacing: 5) {
             HStack {
                 Text(label)
-                    .font(.system(size: 16 * prefs.fontScale))
+                    .font(.system(size: 16))
                     .foregroundColor(.secondary)
                 Spacer()
                 if let q = quality {
@@ -174,7 +188,7 @@ struct QualityReferenceView: View {
                 }
             }
             Text(value)
-                .font(.system(size: 22 * prefs.fontScale, weight: .bold))
+                .font(.system(size: 22, weight: .bold))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(10)
@@ -186,7 +200,7 @@ struct QualityReferenceView: View {
         HStack(spacing: 10) {
             StatusChip(label, color: color)
             Text(value)
-                .font(.system(size: 17 * prefs.fontScale, weight: .bold))
+                .font(.system(size: 17, weight: .bold))
         }
         .padding(10)
         .background(highlight ? color.opacity(0.18) : Color.clear)
@@ -195,6 +209,79 @@ struct QualityReferenceView: View {
                 .stroke(highlight ? color.opacity(0.7) : Color.clear, lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+
+    // MARK: - New Visual Component
+
+    private struct QualityLevel: Identifiable {
+        let id = UUID()
+        let label: String
+        let range: String
+        let color: Color
+        let highlight: Bool
+    }
+
+    @ViewBuilder
+    private func SegmentedBarCard(
+        title: String,
+        value: Int?,
+        unit: String,
+        levels: [QualityLevel],
+        description: String
+    ) -> some View {
+        SectionCard(title: title) {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    if let v = value {
+                        Text("\(v)")
+                            .font(.system(size: 24, weight: .bold))
+                            .foregroundColor(levels.first(where: { $0.highlight })?.color ?? .primary)
+                        Text(unit)
+                            .font(.system(size: 18, weight: .medium))
+                            .foregroundColor(.secondary)
+                            .padding(.top, 2)
+                    } else {
+                        Text("未知")
+                            .font(.system(size: 24, weight: .bold))
+                            .foregroundColor(.secondary)
+                    }
+                }
+
+                HStack(spacing: 2) {
+                    ForEach(levels) { level in
+                        Rectangle()
+                            .fill(level.color)
+                            .overlay(
+                                level.highlight ?
+                                    Rectangle().stroke(Color.primary.opacity(0.8), lineWidth: 3) :
+                                    nil
+                            )
+                    }
+                }
+                .frame(height: 22)
+                .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 6) {
+                    ForEach(levels) { level in
+                        HStack(spacing: 8) {
+                            Circle().fill(level.color).frame(width: 10, height: 10)
+                            Text(level.label)
+                                .font(.system(size: 15, weight: .medium))
+                                .frame(width: 40, alignment: .leading)
+                            Text(level.range)
+                                .font(.system(size: 15, weight: .regular))
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                }
+                .padding(.top, 4)
+                
+                Text(description)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .padding(.top, 4)
+            }
+        }
     }
 
     // Grid-based reference table rows
@@ -213,7 +300,7 @@ struct QualityReferenceView: View {
                     GridRow {
                         StatusChip(r.label, color: r.color)
                         Text(r.value)
-                            .font(.system(size: 19 * prefs.fontScale, weight: .bold))
+                            .font(.system(size: 19, weight: .bold))
                     }
                     .padding(8)
                     .background(r.highlight ? r.color.opacity(0.18) : Color.clear)
@@ -230,7 +317,7 @@ struct QualityReferenceView: View {
                     HStack(spacing: 8) {
                         StatusChip(r.label, color: r.color)
                         Text(r.value)
-                            .font(.system(size: 19 * prefs.fontScale, weight: .bold))
+                            .font(.system(size: 19, weight: .bold))
                         Spacer()
                     }
                     .padding(8)

@@ -72,6 +72,10 @@ struct DashboardView: View {
                         CurrentNetworkAnalysisView(analysis: analysis)
                             .tabItem { Text("当前网络") }
                     }
+
+                    // New: Quality Reference tab
+                    QualityReferenceView()
+                        .tabItem { Text("质量参考") }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
@@ -135,6 +139,7 @@ struct DashboardView: View {
                     }
 
                     Spacer()
+
 
                     HStack(spacing: 8) {
                         Text("Interval")
