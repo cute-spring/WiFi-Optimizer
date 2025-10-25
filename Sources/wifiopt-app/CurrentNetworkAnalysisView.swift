@@ -5,51 +5,38 @@ struct CurrentNetworkAnalysisView: View {
     let analysis: NetworkAnalysis
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            // Header
-            HStack {
-                Image(systemName: "wifi")
-                    .foregroundColor(.blue)
-                Text("当前网络分析")
-                    .font(.headline)
-                    .bold()
-                Spacer()
-                performanceScoreBadge
+        VStack(spacing: AppTheme.sectionSpacing) {
+            // Header + current network card
+            SectionCard(title: "当前网络分析") {
+                HStack {
+                    Image(systemName: "wifi").foregroundColor(.blue)
+                    Text("当前网络分析").font(.headline).bold()
+                    Spacer()
+                    performanceScoreBadge
+                }
+                
+                if let network = analysis.currentNetwork {
+                    currentNetworkSection(network)
+                } else {
+                    Text("未连接到WiFi网络")
+                        .foregroundColor(.secondary)
+                        .italic()
+                }
             }
             
-            if let network = analysis.currentNetwork {
-                // Current Network Info
-                currentNetworkSection(network)
-                
-                Divider()
-                
+            if analysis.currentNetwork != nil {
                 // Performance Metrics
                 performanceMetricsSection
                 
-                Divider()
-                
                 // Interference Factors
-                if !analysis.interferenceFactors.isEmpty {
-                    interferenceFactorsSection
-                    Divider()
-                }
+                if !analysis.interferenceFactors.isEmpty { interferenceFactorsSection }
                 
                 // Recommendations
-                if !analysis.recommendations.isEmpty {
-                    recommendationsSection
-                }
-            } else {
-                Text("未连接到WiFi网络")
-                    .foregroundColor(.secondary)
-                    .italic()
+                if !analysis.recommendations.isEmpty { recommendationsSection }
             }
         }
-        .padding()
-        .background(Color.white)
-        .cornerRadius(12)
-        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
     }
-    
+
     private var performanceScoreBadge: some View {
         HStack(spacing: 4) {
             Text("\(Int(analysis.performanceScore))")
@@ -65,7 +52,7 @@ struct CurrentNetworkAnalysisView: View {
         .foregroundColor(scoreColor)
         .cornerRadius(8)
     }
-    
+
     private var scoreColor: Color {
         switch analysis.performanceScore {
         case 80...100: return .green
@@ -74,18 +61,12 @@ struct CurrentNetworkAnalysisView: View {
         default: return .red
         }
     }
-    
+
     private func currentNetworkSection(_ network: NetworkInfo) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("网络信息")
-                .font(.subheadline)
-                .bold()
-                .foregroundColor(.primary)
+        VStack(alignment: .leading, spacing: 12) {
+            Text("网络信息").font(.subheadline).bold().foregroundColor(.primary)
             
-            LazyVGrid(columns: [
-                GridItem(.flexible()),
-                GridItem(.flexible())
-            ], spacing: 8) {
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                 networkInfoItem("SSID", network.ssid ?? "未知")
                 networkInfoItem("信号强度", "\(network.rssi) dBm")
                 networkInfoItem("噪声水平", "\(network.noise) dBm")
@@ -98,8 +79,7 @@ struct CurrentNetworkAnalysisView: View {
             
             // Signal Quality Indicator
             HStack {
-                Text("信号质量:")
-                    .font(.subheadline)
+                Text("信号质量:").font(.subheadline)
                 Spacer()
                 Text(analysis.signalQuality.rawValue)
                     .font(.subheadline)
@@ -116,7 +96,7 @@ struct CurrentNetworkAnalysisView: View {
                 .foregroundColor(.secondary)
         }
     }
-    
+
     private func networkInfoItem(_ label: String, _ value: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(label)
@@ -127,18 +107,13 @@ struct CurrentNetworkAnalysisView: View {
                 .bold()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(8)
-        .background(Color.gray.opacity(0.1))
-        .cornerRadius(6)
+        .padding(10)
+        .background(Color(nsColor: .textBackgroundColor))
+        .clipShape(RoundedRectangle(cornerRadius: AppTheme.smallCorner, style: .continuous))
     }
-    
+
     private var performanceMetricsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("详细指标")
-                .font(.subheadline)
-                .bold()
-                .foregroundColor(.primary)
-            
+        SectionCard(title: "详细指标") {
             VStack(spacing: 8) {
                 metricRow("信道利用率", "\(Int(analysis.detailedMetrics.channelUtilization))%", 
                          analysis.detailedMetrics.channelUtilization > 50 ? .orange : .green)
@@ -164,13 +139,9 @@ struct CurrentNetworkAnalysisView: View {
     
     private func metricRow(_ label: String, _ value: String, _ color: Color) -> some View {
         HStack {
-            Text(label)
-                .font(.subheadline)
+            Text(label).font(.subheadline)
             Spacer()
-            Text(value)
-                .font(.subheadline)
-                .bold()
-                .foregroundColor(color)
+            Text(value).font(.subheadline).bold().foregroundColor(color)
         }
         .padding(.vertical, 2)
     }
@@ -185,16 +156,7 @@ struct CurrentNetworkAnalysisView: View {
     }
     
     private var interferenceFactorsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Image(systemName: "exclamationmark.triangle")
-                    .foregroundColor(.orange)
-                Text("潜在干扰因素")
-                    .font(.subheadline)
-                    .bold()
-                    .foregroundColor(.primary)
-            }
-            
+        SectionCard(title: "潜在干扰因素") {
             ForEach(analysis.interferenceFactors.indices, id: \.self) { index in
                 let factor = analysis.interferenceFactors[index]
                 interferenceFactorCard(factor)
@@ -205,9 +167,8 @@ struct CurrentNetworkAnalysisView: View {
     private func interferenceFactorCard(_ factor: InterferenceFactor) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text(factor.type.rawValue)
-                    .font(.subheadline)
-                    .bold()
+                Image(systemName: "exclamationmark.triangle").foregroundColor(.orange)
+                Text(factor.type.rawValue).font(.subheadline).bold()
                 Spacer()
                 Text(factor.severity.rawValue)
                     .font(.caption)
@@ -217,18 +178,11 @@ struct CurrentNetworkAnalysisView: View {
                     .foregroundColor(severityColor(factor.severity))
                     .cornerRadius(4)
             }
-            
-            Text(factor.description)
-                .font(.caption)
-                .foregroundColor(.primary)
-            
-            Text("影响: \(factor.impact)")
-                .font(.caption)
-                .foregroundColor(.secondary)
+            Text(factor.description).font(.caption).foregroundColor(.primary)
         }
         .padding(10)
-        .background(Color.gray.opacity(0.1))
-        .cornerRadius(8)
+        .background(Color(nsColor: .textBackgroundColor))
+        .clipShape(RoundedRectangle(cornerRadius: AppTheme.smallCorner, style: .continuous))
     }
     
     private func severityColor(_ severity: InterferenceFactor.Severity) -> Color {
@@ -241,16 +195,7 @@ struct CurrentNetworkAnalysisView: View {
     }
     
     private var recommendationsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Image(systemName: "lightbulb")
-                    .foregroundColor(.yellow)
-                Text("优化建议")
-                    .font(.subheadline)
-                    .bold()
-                    .foregroundColor(.primary)
-            }
-            
+        SectionCard(title: "优化建议") {
             ForEach(analysis.recommendations.indices, id: \.self) { index in
                 let recommendation = analysis.recommendations[index]
                 recommendationCard(recommendation)
@@ -261,9 +206,8 @@ struct CurrentNetworkAnalysisView: View {
     private func recommendationCard(_ recommendation: Recommendation) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text(recommendation.title)
-                    .font(.subheadline)
-                    .bold()
+                Image(systemName: "lightbulb").foregroundColor(.yellow)
+                Text(recommendation.title).font(.subheadline).bold()
                 Spacer()
                 Text(recommendation.priority.rawValue)
                     .font(.caption)
@@ -273,18 +217,14 @@ struct CurrentNetworkAnalysisView: View {
                     .foregroundColor(priorityColor(recommendation.priority))
                     .cornerRadius(4)
             }
-            
-            Text(recommendation.description)
-                .font(.caption)
-                .foregroundColor(.primary)
-            
+            Text(recommendation.description).font(.caption).foregroundColor(.primary)
             Text("预期改善: \(recommendation.expectedImprovement)")
                 .font(.caption)
                 .foregroundColor(.green)
         }
         .padding(10)
-        .background(Color.gray.opacity(0.1))
-        .cornerRadius(8)
+        .background(Color(nsColor: .textBackgroundColor))
+        .clipShape(RoundedRectangle(cornerRadius: AppTheme.smallCorner, style: .continuous))
     }
     
     private func priorityColor(_ priority: Recommendation.Priority) -> Color {

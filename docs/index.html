@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wi‑Fi Optimizer – UI Refresh Preview</title>
+  <style>
+    :root { --bg: #0f1115; --fg: #e6e8ee; --muted: #9aa3b2; --accent: #3a7afe; }
+    body { margin: 0; font: 14px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--fg); }
+    .container { max-width: 920px; margin: 32px auto; padding: 0 16px; }
+    h1 { font-size: 20px; margin: 0 0 8px; }
+    .card { background: #141821; border: 1px solid #1e2430; border-radius: 12px; padding: 16px; box-shadow: 0 6px 18px rgba(0,0,0,.25); }
+    .list { display: grid; grid-template-columns: 1fr; gap: 14px; }
+    li { margin-left: 18px; }
+    code { background: #10141c; border: 1px solid #1e2430; padding: 2px 6px; border-radius: 6px; }
+    .chip { display:inline-flex; align-items:center; gap:6px; border-radius:999px; padding:6px 10px; background: rgba(58,122,254,.15); color:#8fb7ff; border: 1px solid rgba(58,122,254,.35); font-size:12px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+        <h1>UI Refresh – Summary</h1>
+        <span class="chip">Design System · Cards & Chips</span>
+      </div>
+      <ul class="list">
+        <li>Dashboard header now uses a clean card surface with a segmented view picker, status chips for Location and Wi‑Fi association, and right‑aligned controls.</li>
+        <li>CurrentNetworkAnalysisView adopts SectionCard sections: Network Info grid, Detailed Metrics, Interference Factors, and Recommendations with improved spacing and typography.</li>
+        <li>Tiles and badges use consistent corner radii and subtle surfaces for better readability on macOS.</li>
+        <li>Debug overlay refined with a status chip header, monospaced values, subtle border, and improved contrast.</li>
+      </ul>
+    </div>
+
+    <p style="color:var(--muted); margin-top:18px;">To view the changes in the app, run <code>swift run wifiopt-app</code> or open <code>.build/debug/wifiopt-app.app</code>.</p>
+  </div>
+</body>
+</html>
