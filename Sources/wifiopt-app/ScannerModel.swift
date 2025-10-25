@@ -10,6 +10,11 @@ final class ScannerModel: ObservableObject {
     @Published var recommended24: Int? = nil
     @Published var recommended5: Int? = nil
     @Published var networkAnalysis: NetworkAnalysis? = nil
+    @Published var scanInterval: Double = 3.0 {
+        didSet {
+            if isScanning { restartTimer() }
+        }
+    }
 
     private let scanner = WiFiScanner()
     private var timer: Timer?
@@ -17,12 +22,7 @@ final class ScannerModel: ObservableObject {
     func start() {
         guard timer == nil else { return }
         isScanning = true
-        timer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { [weak self] _ in
-            Task { @MainActor in
-                self?.tick()
-            }
-        }
-        RunLoop.main.add(timer!, forMode: .common)
+        restartTimer()
         tick()
     }
 
@@ -30,6 +30,18 @@ final class ScannerModel: ObservableObject {
         isScanning = false
         timer?.invalidate()
         timer = nil
+    }
+
+    private func restartTimer() {
+        timer?.invalidate()
+        timer = Timer.scheduledTimer(withTimeInterval: scanInterval, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                self?.tick()
+            }
+        }
+        if let timer = timer {
+            RunLoop.main.add(timer, forMode: .common)
+        }
     }
 
     func tick() {

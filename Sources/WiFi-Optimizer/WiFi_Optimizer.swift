@@ -188,134 +188,39 @@ public final class WiFiScanner {
 
     public func scan(bandFilter: WiFiBand? = nil) throws -> ([NetworkInfo], InterfaceInfo) {
         Debug.log("scan() start, bandFilter=\(String(describing: bandFilter?.rawValue))")
-        // First try system profiler as a fallback
-        let systemNetworks = SystemProfilerWiFi.getNetworks()
-        if !systemNetworks.isEmpty {
-            print("Using system profiler data - found \(systemNetworks.count) networks")
-            Debug.log("system_profiler returned \(systemNetworks.count) networks")
-            var filtered = systemNetworks.filter { network in
-                if let filter = bandFilter {
-                    return network.band == filter
-                }
-                return true
-            }
-            
-            // Prefer real interface info from CoreWLAN even when using system_profiler
-            if let iface = client.interface() {
-                let rssi = iface.rssiValue()
-                let noise = iface.noiseMeasurement()
-                let snr = rssi - noise
-                let channel = iface.wlanChannel()?.channelNumber
-                let band = iface.wlanChannel().map { WiFiBand.from(channel: $0) }
-                let bandwidth = iface.wlanChannel().map { NetworkInfo.widthMHz($0) } ?? 20
-                Debug.log("iface ssid=\(iface.ssid() ?? "nil"), bssid=\(iface.bssid() ?? "nil"), rssi=\(rssi), noise=\(noise), ch=\(String(describing: channel)), band=\(String(describing: band?.rawValue))")
-
-                // If we know the current SSID/BSSID, enrich the matching system_profiler entry
-                if let currentSSID = iface.ssid(), let currentBSSID = iface.bssid() {
-                    func norm(_ s: String) -> String { s.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines.union(CharacterSet(charactersIn: "\""))).lowercased() }
-                    let target = norm(currentSSID)
-                    if let idx = filtered.firstIndex(where: { ($0.ssid.map(norm) ?? "") == target }) {
-                        let n = filtered[idx]
-                        filtered[idx] = NetworkInfo(
-                            id: n.id,
-                            ssid: currentSSID,
-                            bssid: currentBSSID,
-                            rssi: n.rssi,
-                            noise: n.noise,
-                            snr: n.snr,
-                            channel: n.channel,
-                            band: n.band,
-                            bandwidthMHz: n.bandwidthMHz,
-                            security: n.security
-                        )
-                        Debug.log("enriched system_profiler entry for SSID='\(currentSSID)' with BSSID='\(currentBSSID)'")
-                    } else {
-                        // If not found in system_profiler output, synthesize a current network entry
-                        let synthesized = NetworkInfo(
-                            id: currentBSSID,
-                            ssid: currentSSID,
-                            bssid: currentBSSID,
-                            rssi: rssi,
-                            noise: noise,
-                            snr: snr,
-                            channel: channel ?? 0,
-                            band: band ?? .twoPointFourGHz,
-                            bandwidthMHz: bandwidth,
-                            security: "Unknown"
-                        )
-                        filtered.append(synthesized)
-                        Debug.log("synthesized current network entry (SSID='\(currentSSID)', BSSID='\(currentBSSID)')")
-                    }
-                }
-
-                let current = InterfaceInfo(
-                    ssid: iface.ssid(),
-                    bssid: iface.bssid(),
-                    rssi: rssi,
-                    noise: noise,
-                    snr: snr,
-                    channel: channel,
-                    band: band
-                )
-                Debug.log("returning \(filtered.count) networks with CoreWLAN-based InterfaceInfo")
-
-                return (filtered, current)
-            } else {
-                // Fallback minimal current interface info when CoreWLAN is unavailable
-                let current = InterfaceInfo(
-                    ssid: nil,
-                    bssid: nil,
-                    rssi: -50,
-                    noise: -80,
-                    snr: 30,
-                    channel: nil,
-                    band: nil
-                )
-                Debug.log("CoreWLAN interface unavailable; returning minimal InterfaceInfo, networks=\(filtered.count)")
-                return (filtered, current)
-            }
+        // Prefer CoreWLAN first
+        guard let iface = CWWiFiClient.shared().interface() else {
+            throw NSError(domain: "WiFiScanner", code: 1, userInfo: [NSLocalizedDescriptionKey: "No Wi‑Fi interface found"])
         }
-        
-        // Fallback to CoreWLAN if system profiler fails
-        guard let iface = client.interface() else {
-            throw NSError(domain: "WiFiScanner", code: 1, userInfo: [NSLocalizedDescriptionKey: "No Wi-Fi interface found"])
-        }
-        
-        // Try multiple scan approaches to get better SSID data
+    
         var nets: Set<CWNetwork>
-        
-        // First try a comprehensive scan with hidden networks
         do {
+            // Comprehensive scan including hidden networks
             nets = try iface.scanForNetworks(withSSID: nil, includeHidden: true)
         } catch {
-            // Fallback to basic scan without hidden networks
+            // Fallback basic scan
             nets = try iface.scanForNetworks(withSSID: nil, includeHidden: false)
         }
-        
-        // If we still don't have good results, try a different scan method
+        // If poor results, try again without hidden networks
         if nets.isEmpty || nets.allSatisfy({ $0.ssid?.isEmpty != false }) {
-            // Try scanning without including hidden networks as a fallback
             do {
                 nets = try iface.scanForNetworks(withSSID: nil, includeHidden: false)
             } catch {
-                // Use the original results if enhanced scan fails
+                // Keep original results
             }
         }
-        
+    
         let mapped: [NetworkInfo] = nets.compactMap { net in
             let info = NetworkInfo(network: net)
-            if let f = bandFilter {
-                return info.band == f ? info : nil
-            }
+            if let f = bandFilter { return info.band == f ? info : nil }
             return info
         }
-
+    
         let rssi = iface.rssiValue()
         let noise = iface.noiseMeasurement()
         let snr = rssi - noise
         let channel = iface.wlanChannel()?.channelNumber
         let band = iface.wlanChannel().map { WiFiBand.from(channel: $0) }
-
         let current = InterfaceInfo(
             ssid: iface.ssid(),
             bssid: iface.bssid(),
@@ -325,8 +230,67 @@ public final class WiFiScanner {
             channel: channel,
             band: band
         )
-        Debug.log("CoreWLAN scan returned \(mapped.count) networks; current ssid='\(iface.ssid() ?? "nil")', bssid='\(iface.bssid() ?? "nil")'")
-
-        return (mapped, current)
+    
+        if !mapped.isEmpty {
+            let ss = iface.ssid() ?? "nil"
+            let bs = iface.bssid() ?? "nil"
+            Debug.log("CoreWLAN scan returned \(mapped.count) networks; current ssid=\(ss), bssid=\(bs)")
+            return (mapped, current)
+        }
+    
+        // Fallback to system_profiler if CoreWLAN yields no networks or is heavily gated
+        let systemNetworks = SystemProfilerWiFi.getNetworks()
+        if !systemNetworks.isEmpty {
+            print("Using system profiler fallback - found \(systemNetworks.count) networks")
+            Debug.log("system_profiler returned \(systemNetworks.count) networks (fallback)")
+            var filtered = systemNetworks.filter { net in
+                if let f = bandFilter { return net.band == f }
+                return true
+            }
+    
+            // Enrich or synthesize current network entry if possible
+            if let currentSSID = iface.ssid(), let currentBSSID = iface.bssid() {
+                func norm(_ s: String) -> String { s.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines.union(CharacterSet(charactersIn: "\""))).lowercased() }
+                let target = norm(currentSSID)
+                if let idx = filtered.firstIndex(where: { ($0.ssid.map(norm) ?? "") == target }) {
+                    let n = filtered[idx]
+                    filtered[idx] = NetworkInfo(
+                        id: n.id,
+                        ssid: currentSSID,
+                        bssid: currentBSSID,
+                        rssi: n.rssi,
+                        noise: n.noise,
+                        snr: n.snr,
+                        channel: n.channel,
+                        band: n.band,
+                        bandwidthMHz: n.bandwidthMHz,
+                        security: n.security
+                    )
+                    Debug.log("enriched system_profiler entry for SSID='\(currentSSID)' with BSSID='\(currentBSSID)'")
+                } else {
+                    let bandwidth = iface.wlanChannel().map { NetworkInfo.widthMHz($0) } ?? 20
+                    let synthesized = NetworkInfo(
+                        id: currentBSSID,
+                        ssid: currentSSID,
+                        bssid: currentBSSID,
+                        rssi: rssi,
+                        noise: noise,
+                        snr: snr,
+                        channel: channel ?? 0,
+                        band: band ?? .twoPointFourGHz,
+                        bandwidthMHz: bandwidth,
+                        security: "Unknown"
+                    )
+                    filtered.append(synthesized)
+                    Debug.log("synthesized current network entry (SSID='\(currentSSID)', BSSID='\(currentBSSID)')")
+                }
+            }
+    
+            Debug.log("returning \(filtered.count) networks via system_profiler fallback with CoreWLAN-based InterfaceInfo")
+            return (filtered, current)
+        }
+    
+        Debug.log("No networks found by CoreWLAN or system_profiler; returning empty list with current interface info")
+        return ([], current)
     }
 }

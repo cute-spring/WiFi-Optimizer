@@ -1,8 +1,9 @@
 import Foundation
 import CoreLocation
+import Combine
 
 @MainActor
-final class LocationPermission: NSObject, CLLocationManagerDelegate {
+final class LocationPermission: NSObject, CLLocationManagerDelegate, ObservableObject {
     static let shared = LocationPermission()
     private let manager = CLLocationManager()
     @Published var authorizationStatus: CLAuthorizationStatus = .notDetermined

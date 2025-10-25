@@ -39,33 +39,34 @@ struct DebugOverlay: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("DEBUG MODE")
-                .font(.caption2)
-                .fontWeight(.bold)
-                .foregroundColor(.yellow)
-
-            Text("Location: \(locationText) | Associated: \(associatedText)")
-                .font(.caption2)
+        VStack(alignment: .leading, spacing: 6) {
+            StatusChip("DEBUG MODE", systemImage: "ladybug", color: .yellow)
+            
+            Text("Location: \(locationText) • Associated: \(associatedText)")
+                .font(.system(size: 11, weight: .regular, design: .monospaced))
                 .foregroundColor(.white)
-
+            
             Text("SSID: \(ssidText)")
-                .font(.caption2)
+                .font(.system(size: 11, weight: .regular, design: .monospaced))
                 .foregroundColor(.white)
             Text("BSSID: \(bssidText)")
-                .font(.caption2)
+                .font(.system(size: 11, weight: .regular, design: .monospaced))
                 .foregroundColor(.white)
-            Text("RSSI: \(rssiText) | Noise: \(noiseText) | SNR: \(snrText)")
-                .font(.caption2)
+            Text("RSSI: \(rssiText) • Noise: \(noiseText) • SNR: \(snrText)")
+                .font(.system(size: 11, weight: .regular, design: .monospaced))
                 .foregroundColor(.white)
-            Text("Channel: \(channelText) | Band: \(bandText) | Networks: \(networksCount)")
-                .font(.caption2)
+            Text("Channel: \(channelText) • Band: \(bandText) • Networks: \(networksCount)")
+                .font(.system(size: 11, weight: .regular, design: .monospaced))
                 .foregroundColor(.white)
         }
-        .padding(8)
+        .padding(10)
         .background(Color.black.opacity(0.7))
-        .cornerRadius(8)
-        .shadow(radius: 4)
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(Color.white.opacity(0.12), lineWidth: 1)
+        )
+        .cornerRadius(10)
+        .shadow(color: Color.black.opacity(0.25), radius: 6, x: 0, y: 3)
         .accessibilityIdentifier("DebugOverlay")
     }
 }
