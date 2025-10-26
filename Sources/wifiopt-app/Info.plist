@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleName</key>
-	<string>wifiopt-app</string>
+	<string>WiFi-Optimizer</string>
 	<key>CFBundleIdentifier</key>
 	<string>com.gavinzhang.wifiopt-app</string>
 	<key>CFBundleExecutable</key>

@@ -6,9 +6,10 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")"/.. && pwd)"
 APP_NAME="wifiopt-app"
+APP_DISPLAY_NAME="WiFi-Optimizer"
 BUILD_DIR="$ROOT_DIR/.build/debug"
 BIN_PATH="$BUILD_DIR/$APP_NAME"
-APP_BUNDLE="$BUILD_DIR/$APP_NAME.app"
+APP_BUNDLE="$BUILD_DIR/$APP_DISPLAY_NAME.app"
 CONTENTS_DIR="$APP_BUNDLE/Contents"
 MACOS_DIR="$CONTENTS_DIR/MacOS"
 RES_DIR="$CONTENTS_DIR/Resources"
@@ -54,8 +55,10 @@ USAGE_DESC="${DEFAULT_USAGE}"
 if [[ -f "$SRC_PLIST" ]]; then
   BID_FROM_SRC="$(read_plist_key CFBundleIdentifier "$SRC_PLIST")"
   USAGE_FROM_SRC="$(read_plist_key NSLocationWhenInUseUsageDescription "$SRC_PLIST")"
+  NAME_FROM_SRC="$(read_plist_key CFBundleName "$SRC_PLIST")"
   if [[ -n "${BID_FROM_SRC}" ]]; then BUNDLE_ID="${BID_FROM_SRC}"; fi
   if [[ -n "${USAGE_FROM_SRC}" ]]; then USAGE_DESC="${USAGE_FROM_SRC}"; fi
+  if [[ -n "${NAME_FROM_SRC}" ]]; then APP_DISPLAY_NAME="${NAME_FROM_SRC}"; fi
   APP_VERSION="$(read_plist_key CFBundleShortVersionString "$SRC_PLIST")"
   BUILD_NUMBER="$(read_plist_key CFBundleVersion "$SRC_PLIST")"
 fi
@@ -67,7 +70,7 @@ cat > "$CONTENTS_DIR/Info.plist" <<PLIST
 <plist version="1.0">
 <dict>
   <key>CFBundleName</key>
-  <string>${APP_NAME}</string>
+  <string>${APP_DISPLAY_NAME}</string>
   <key>CFBundleIdentifier</key>
   <string>${BUNDLE_ID}</string>
   <key>CFBundleExecutable</key>
