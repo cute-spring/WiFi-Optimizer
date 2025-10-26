@@ -20,7 +20,7 @@ public enum WiFiBand: String, CaseIterable {
     }
 }
 
-public struct NetworkInfo: Identifiable {
+public struct NetworkInfo: Identifiable, Equatable {
     public let id: String // BSSID
     public var ssid: String?
     public let bssid: String

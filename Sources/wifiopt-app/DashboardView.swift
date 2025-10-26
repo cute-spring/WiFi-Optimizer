@@ -8,6 +8,7 @@ struct DashboardView: View {
     @EnvironmentObject var location: LocationPermission
     @EnvironmentObject var appState: AppState
     @State private var selectedView: ViewSelection = .graph
+    @State private var selectedNetworkID: String? = nil
 
     enum ViewSelection: String, CaseIterable, Identifiable {
         case graph = "Graph"
@@ -84,11 +85,20 @@ struct DashboardView: View {
 
                     // New: Quality Reference tab
                     QualityReferenceView()
-                        .tabItem { Text("质量参考") }
+                        .environmentObject(model)
+                        .tabItem {
+                            Label("质量参考", systemImage: "chart.bar.doc.horizontal")
+                        }
+
+                    // New: Optimization Advice tab
+                    OptimizationAdviceView(selectedNetwork: model.networks.first(where: { $0.id == selectedNetworkID }) ?? model.networks.first(where: { $0.bssid == model.current?.bssid }))
+                        .tabItem {
+                            Label("优化建议", systemImage: "lightbulb")
+                        }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                Table(model.networks) {
+                Table(model.networks, selection: $selectedNetworkID) {
                     TableColumn("SSID") { n in Text(n.ssid ?? "<hidden>") }
                     TableColumn("BSSID") { n in Text(n.bssid).font(.system(.body, design: .monospaced)) }
                     TableColumn("RSSI") { n in Text("\(n.rssi)") }
