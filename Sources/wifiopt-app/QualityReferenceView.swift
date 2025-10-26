@@ -43,6 +43,7 @@ struct QualityReferenceView: View {
         SectionCard(title: "当前网络一览") {
             if let iface = model.current {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 240), spacing: 8)], spacing: 8) {
+                    summaryItem("SSID", iface.ssid ?? "未知", quality: nil)
                     summaryItem("RSSI", "\(iface.rssi) dBm", quality: qualityForRSSI(iface.rssi))
                     summaryItem("Noise", "\(iface.noise) dBm", quality: qualityForNoise(iface.noise))
                     summaryItem("SNR", "\(iface.snr) dB", quality: qualityForSNR(iface.snr))
