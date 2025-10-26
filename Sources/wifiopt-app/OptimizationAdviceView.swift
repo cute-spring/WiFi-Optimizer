@@ -8,7 +8,7 @@ struct OptimizationAdviceView: View {
         buildAdvices(for: selectedNetwork)
     }
 
-    @State private var expandedAdvice: UUID?
+    @State private var expandedAdvice: String?
 
     var body: some View {
         ScrollView {
@@ -19,45 +19,52 @@ struct OptimizationAdviceView: View {
                     .padding(.bottom, 10)
 
                 ForEach(advices) { advice in
-                    DisclosureGroup(
-                        isExpanded: .init(
-                            get: { expandedAdvice == advice.id },
-                            set: { isExpanded in
-                                withAnimation(.easeInOut(duration: 0.25)) {
-                                    expandedAdvice = isExpanded ? advice.id : nil
+                    VStack(alignment: .leading) {
+                        HStack(spacing: 15) {
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(Color.secondary.opacity(0.7))
+                                .rotationEffect(.degrees(expandedAdvice == advice.id ? 90 : 0))
+
+                            Image(systemName: advice.icon)
+                                .font(.title2)
+                                .foregroundColor(advice.highlightColor)
+                                .frame(width: 35, height: 35)
+                                .background(advice.highlightColor.opacity(0.12))
+                                .clipShape(Circle())
+
+                            Text(advice.title)
+                                .font(.title2)
+                                .fontWeight(.semibold)
+
+                            if advice.isActionable {
+                                Spacer()
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .foregroundColor(.orange)
+                                    .font(.title3)
+                            }
+                        }
+                        .padding(.vertical, 8)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            withAnimation(.easeInOut(duration: 0.25)) {
+                                if expandedAdvice == advice.id {
+                                    expandedAdvice = nil
+                                } else {
+                                    expandedAdvice = advice.id
                                 }
                             }
-                        ),
-                        content: {
+                        }
+
+                        if expandedAdvice == advice.id {
                             Text(.init(advice.content)) // 使用 Markdown
                                 .font(.body)
                                 .lineSpacing(6)
                                 .padding(.top, 10)
                                 .padding(.horizontal, 4)
-                        },
-                        label: {
-                            HStack(spacing: 15) {
-                                Image(systemName: advice.icon)
-                                    .font(.title2)
-                                    .foregroundColor(advice.highlightColor)
-                                    .frame(width: 35, height: 35)
-                                    .background(advice.highlightColor.opacity(0.12))
-                                    .clipShape(Circle())
-
-                                Text(advice.title)
-                                    .font(.title2)
-                                    .fontWeight(.semibold)
-
-                                if advice.isActionable {
-                                    Spacer()
-                                    Image(systemName: "exclamationmark.triangle.fill")
-                                        .foregroundColor(.orange)
-                                        .font(.title3)
-                                }
-                            }
-                            .padding(.vertical, 8)
+                                .padding(.leading, 50) // Approximate indent
                         }
-                    )
+                    }
                     .padding()
                     .background(Color(NSColor.textBackgroundColor))
                     .cornerRadius(16)
@@ -91,7 +98,7 @@ struct OptimizationAdviceView: View {
 }
 
 struct AdviceSection: Identifiable {
-    let id = UUID()
+    var id: String { title }
     let title: String
     let icon: String
     let content: String
