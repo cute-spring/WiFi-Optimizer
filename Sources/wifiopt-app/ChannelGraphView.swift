@@ -98,7 +98,8 @@ struct ChannelGraphView: View {
             let weight: Font.Weight = isHighlight ? .bold : .regular
             let textColor: Color = isHighlight ? .primary : .secondary
             let label = context.resolve(Text("\(ch)").font(.system(size: 9, weight: weight)).foregroundColor(textColor))
-            context.draw(label, at: CGPoint(x: x, y: rect.minY - 6), anchor: .bottom)
+            // 将顶部刻度画在画布内部，避免被 clipShape 裁剪
+            context.draw(label, at: CGPoint(x: x, y: rect.minY + 6), anchor: .top)
         }
         // Baseline
         var base = Path()
