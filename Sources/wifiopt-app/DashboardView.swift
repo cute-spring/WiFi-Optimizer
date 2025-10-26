@@ -84,7 +84,15 @@ struct DashboardView: View {
 
                     // New: Quality Reference tab
                     QualityReferenceView()
-                        .tabItem { Text("质量参考") }
+                        .tabItem {
+                            Label("质量参考", systemImage: "chart.bar.doc.horizontal")
+                        }
+
+                    // New: Optimization Advice tab
+                    OptimizationAdviceView()
+                        .tabItem {
+                            Label("优化建议", systemImage: "lightbulb")
+                        }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
