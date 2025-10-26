@@ -123,7 +123,7 @@ struct ChannelGraphView: View {
             context.draw(label, at: CGPoint(x: centerX, y: crestY), anchor: .bottom)
 
             // Channel number below the main label
-            let channelLabel = context.resolve(Text("Ch \(n.channel)").font(.system(size: 9)).foregroundColor(.secondary))
+            let channelLabel = context.resolve(Text("信道 \(n.channel)").font(.system(size: 9)).foregroundColor(.secondary))
             context.draw(channelLabel, at: CGPoint(x: centerX, y: crestY + 12), anchor: .bottom)
         }
     }
