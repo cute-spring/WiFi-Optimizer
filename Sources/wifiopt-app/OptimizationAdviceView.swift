@@ -4,94 +4,113 @@ import WiFi_Optimizer
 struct OptimizationAdviceView: View {
     @EnvironmentObject var scannerModel: ScannerModel
     @Binding var selectedNetwork: NetworkInfo?
-
-    private var advices: [AdviceSection] {
-        buildAdvices(for: selectedNetwork)
-    }
+    @Environment(\.dismiss) private var dismiss
 
     @State private var expandedAdvice: String?
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                Text("Wi-Fi 优化建议")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-                    .padding(.bottom, 10)
-
-                ForEach(advices) { advice in
-                    VStack(alignment: .leading) {
-                        HStack(spacing: 15) {
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(Color.secondary.opacity(0.7))
-                                .rotationEffect(.degrees(expandedAdvice == advice.id ? 90 : 0))
-
-                            Image(systemName: advice.icon)
-                                .font(.title2)
-                                .foregroundColor(advice.highlightColor)
-                                .frame(width: 35, height: 35)
-                                .background(advice.highlightColor.opacity(0.12))
-                                .clipShape(Circle())
-
-                            Text(advice.title)
-                                .font(.title2)
-                                .fontWeight(.semibold)
-
-                            if advice.isActionable {
-                                Spacer()
-                                Image(systemName: "exclamationmark.triangle.fill")
-                                    .foregroundColor(.orange)
-                                    .font(.title3)
-                            }
-                        }
-                        .padding(.vertical, 8)
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            withAnimation(.easeInOut(duration: 0.25)) {
-                                if expandedAdvice == advice.id {
-                                    expandedAdvice = nil
-                                } else {
-                                    expandedAdvice = advice.id
-                                }
-                            }
-                        }
-
-                        if expandedAdvice == advice.id {
-                            styledContent(for: advice.content)
-                                .padding(.top, 10)
-                                .padding(.horizontal, 4)
-                                .padding(.leading, 50) // Approximate indent
-                        }
+        let advices = buildAdvices(for: selectedNetwork, with: scannerModel)
+        return ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Text("Wi-Fi 优化建议")
+                        .font(.title)
+                        .fontWeight(.bold)
+                    Spacer()
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(.secondary)
+                            .font(.system(size: 16, weight: .regular))
                     }
-                    .padding()
-                    .background(Color(NSColor.textBackgroundColor))
-                    .cornerRadius(16)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(advice.isActionable ? advice.highlightColor : Color.clear, lineWidth: 1.5)
-                    )
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("关闭")
+                }
+                .padding(.bottom, 8)
+
+                ForEach(advices, id: \.id) { section in
+                    AdviceCard(section: section)
                 }
             }
             .padding()
         }
-        .onAppear {
-            // Auto-expand the first actionable advice
-            if let firstActionable = advices.first(where: { $0.isActionable }) {
-                expandedAdvice = firstActionable.id
+        .background(Color(NSColor.underPageBackgroundColor))
+    }
+
+    private func styledContent(for text: String) -> Text {
+        let components = text.components(separatedBy: "**")
+        var styledText = Text("")
+
+        for (index, component) in components.enumerated() {
+            if index % 2 == 1 {
+                styledText = styledText + Text(component)
+                    .fontWeight(.bold)
+                    .foregroundColor(.accentColor)
+            } else {
+                styledText = styledText + Text(component)
             }
         }
-        .onChange(of: selectedNetwork) { _ in
-            // Re-evaluate which advice to expand when the network changes
-            if let firstActionable = advices.first(where: { $0.isActionable }) {
-                withAnimation(.easeInOut(duration: 0.25)) {
-                    expandedAdvice = firstActionable.id
+        return styledText
+    }
+}
+
+struct AdviceCard: View {
+    let section: AdviceSection
+    @State private var isExpanded: Bool = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                Image(systemName: section.icon)
+                    .font(.system(size: 22, weight: .regular))
+                    .foregroundColor(section.highlightColor)
+                    .frame(width: 30)
+
+                Text(section.title)
+                    .fontWeight(.semibold)
+                    .font(.title3)
+
+                Spacer()
+
+                if section.isActionable {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundColor(.orange)
+                        .font(.system(size: 16))
                 }
-            } else {
-                withAnimation(.easeInOut(duration: 0.25)) {
-                    expandedAdvice = nil
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.secondary.opacity(0.8))
+                    .rotationEffect(.degrees(isExpanded ? 90 : 0))
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 12)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isExpanded.toggle()
                 }
             }
+
+            if isExpanded {
+                VStack(alignment: .leading, spacing: 12) {
+                    styledContent(for: section.content)
+                        .font(.body)
+                        .lineSpacing(4)
+                }
+                .padding(.horizontal)
+                .padding(.bottom, 12)
+            }
+        }
+        .background(Color(NSColor.windowBackgroundColor))
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
+        )
+        .cornerRadius(10)
+        .onAppear {
+            self.isExpanded = section.isExpanded
         }
     }
 
@@ -123,7 +142,8 @@ struct AdviceSection: Identifiable {
 }
 
 // swiftlint:disable:next file_length
-private func buildAdvices(for network: NetworkInfo?) -> [AdviceSection] {
+@MainActor
+private func buildAdvices(for network: NetworkInfo?, with scannerModel: ScannerModel) -> [AdviceSection] {
     guard let network = network else {
         // Return a default or empty state if no network is selected
         return [
@@ -173,7 +193,7 @@ private func buildAdvices(for network: NetworkInfo?) -> [AdviceSection] {
         AdviceSection(
             title: "频段和信道选择",
             icon: "wifi.circle",
-            content: channelContent(network: network, quality: channelQuality),
+            content: channelContent(network: network, quality: channelQuality, scannerModel: scannerModel),
             isActionable: channelQuality.isActionable,
             isExpanded: channelQuality.isActionable,
             highlightColor: channelQuality.color
@@ -256,22 +276,28 @@ private enum QualityLevel: Int, Comparable {
     }
 }
 
-private func channelContent(network: NetworkInfo, quality: QualityResult) -> String {
+@MainActor
+private func channelContent(network: NetworkInfo, quality: QualityResult, scannerModel: ScannerModel) -> String {
     let currentBand = network.band.rawValue
     let currentChannel = network.channel
     var advice = "您当前连接在 \(currentBand) 频段的信道 \(currentChannel) 上。\n"
 
     if quality.isActionable {
         if network.band == .twoPointFourGHz {
-            // TODO: This needs access to the scannerModel to provide a recommendation.
-            // This will be passed in a future step.
-            advice += "附近网络拥挤，建议在路由器管理界面尝试切换到不重叠的信道（1, 6, 11）之一以减少干扰。\n"
+            if let recommended = scannerModel.recommended24 {
+                advice += "附近网络拥挤，建议在路由器管理界面尝试切换到 **信道 \(recommended)** 以减少干扰。\n"
+            } else {
+                advice += "附近网络拥挤，建议在路由器管理界面尝试切换到不重叠的信道（1, 6, 11）之一以减少干扰。\n"
+            }
         } else if network.band == .fiveGHz {
             if (52...144).contains(network.channel) { // DFS Channels
                 advice += "您当前正在使用 DFS 信道。如果遇到连接中断，可能是雷达干扰所致。建议切换到非 DFS 信道（如 36-48 或 149-165）以提高稳定性。\n"
             } else {
-                // TODO: This needs access to the scannerModel to provide a recommendation.
-                advice += "附近网络拥挤，建议在路由器管理界面尝试切换到其他信道以减少干扰。\n"
+                if let recommended = scannerModel.recommended5 {
+                    advice += "附近网络拥挤，建议在路由器管理界面尝试切换到 **信道 \(recommended)** 以减少干扰。\n"
+                } else {
+                    advice += "附近网络拥挤，建议在路由器管理界面尝试切换到其他信道以减少干扰。\n"
+                }
             }
         }
     }

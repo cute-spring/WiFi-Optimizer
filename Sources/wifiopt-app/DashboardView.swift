@@ -10,6 +10,7 @@ struct DashboardView: View {
     @State private var selectedView: ViewSelection = .graph
     @State private var selectedNetworkID: String? = nil
     @State private var selectedNetwork: NetworkInfo? = nil
+    @State private var isShowingAdvice = false
 
     enum ViewSelection: String, CaseIterable, Identifiable {
         case graph = "Graph"
@@ -56,61 +57,13 @@ struct DashboardView: View {
 
     var body: some View {
         let _ = Debug.log("DashboardView re-rendered with isDebugPanelVisible = \(appState.isDebugPanelVisible)")
-        let _ = Debug.log("DashboardView re-rendered with isDebugPanelVisible = \(appState.isDebugPanelVisible)")
         VStack(spacing: 16) {
             header
 
             if selectedView == .graph {
-                // Channel occupancy graphs + current analysis
-                TabView {
-                    ChannelGraphView(
-                        band: .twoPointFourGHz,
-                        networks: model.networks.filter { $0.band == .twoPointFourGHz },
-                        currentBSSID: model.current?.bssid
-                    )
-                    .tabItem { Text("2.4 GHz") }
-
-                    ChannelGraphView(
-                        band: .fiveGHz,
-                        networks: model.networks.filter { $0.band == .fiveGHz },
-                        currentBSSID: model.current?.bssid
-                    )
-                    .tabItem { Text("5 GHz") }
-
-                    ChannelGraphView(
-                        band: .sixGHz,
-                        networks: model.networks.filter { $0.band == .sixGHz },
-                        currentBSSID: model.current?.bssid
-                    )
-                    .tabItem { Text("6 GHz") }
-
-                    // New: Quality Reference tab
-                    QualityReferenceView()
-                        .environmentObject(model)
-                        .tabItem {
-                            Label("质量参考", systemImage: "chart.bar.doc.horizontal")
-                        }
-
-                    // New: Optimization Advice tab
-                    OptimizationAdviceView(selectedNetwork: $selectedNetwork)
-                        .tabItem {
-                            Label("优化建议", systemImage: "lightbulb")
-                        }
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                graphView
             } else {
-                Table(model.networks, selection: $selectedNetworkID) {
-                    TableColumn("SSID") { n in Text(n.ssid ?? "<hidden>") }
-                    TableColumn("BSSID") { n in Text(n.bssid).font(.system(.body, design: .monospaced)) }
-                    TableColumn("RSSI") { n in Text("\(n.rssi)") }
-                    TableColumn("Noise") { n in Text("\(n.noise)") }
-                    TableColumn("SNR") { n in Text("\(n.snr)") }
-                    TableColumn("Channel") { n in Text("\(n.channel)") }
-                    TableColumn("Band") { n in Text(n.band.rawValue) }
-                    TableColumn("Width") { n in Text("\(n.bandwidthMHz) MHz") }
-                    TableColumn("Security") { n in Text(n.security) }
-                }
-                .tableStyle(.inset)
+                listView
             }
         }
         .overlay(alignment: .topTrailing) {
@@ -134,6 +87,59 @@ struct DashboardView: View {
         .onDisappear { model.stop() }
     }
 
+    private var graphView: some View {
+        TabView {
+            ChannelGraphView(
+                band: .twoPointFourGHz,
+                networks: model.networks.filter { $0.band == .twoPointFourGHz },
+                currentBSSID: model.current?.bssid
+            )
+            .tabItem { Text("2.4 GHz") }
+
+            ChannelGraphView(
+                band: .fiveGHz,
+                networks: model.networks.filter { $0.band == .fiveGHz },
+                currentBSSID: model.current?.bssid
+            )
+            .tabItem { Text("5 GHz") }
+
+            ChannelGraphView(
+                band: .sixGHz,
+                networks: model.networks.filter { $0.band == .sixGHz },
+                currentBSSID: model.current?.bssid
+            )
+            .tabItem { Text("6 GHz") }
+
+            QualityReferenceView()
+                .environmentObject(model)
+                .tabItem {
+                    Label("质量参考", systemImage: "chart.bar.doc.horizontal")
+                }
+
+            // New: Optimization Advice tab
+            OptimizationAdviceView(selectedNetwork: $selectedNetwork)
+                .tabItem {
+                    Label("优化建议", systemImage: "lightbulb")
+                }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var listView: some View {
+        Table(model.networks, selection: $selectedNetworkID) {
+            TableColumn("SSID") { n in Text(n.ssid ?? "<hidden>") }
+            TableColumn("BSSID") { n in Text(n.bssid).font(.system(.body, design: .monospaced)) }
+            TableColumn("RSSI") { n in Text("\(n.rssi)") }
+            TableColumn("Noise") { n in Text("\(n.noise)") }
+            TableColumn("SNR") { n in Text("\(n.snr)") }
+            TableColumn("Channel") { n in Text("\(n.channel)") }
+            TableColumn("Band") { n in Text(n.band.rawValue) }
+            TableColumn("Width") { n in Text("\(n.bandwidthMHz) MHz") }
+            TableColumn("Security") { n in Text(n.security) }
+        }
+        .tableStyle(.inset)
+    }
+
     private var header: some View {
         SectionCard {
             VStack(spacing: 12) {
@@ -149,6 +155,7 @@ struct DashboardView: View {
                     }
                     .pickerStyle(.segmented)
                     .frame(width: 220)
+
                 }
 
                 HStack(spacing: 10) {
