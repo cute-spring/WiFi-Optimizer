@@ -2,7 +2,8 @@ import SwiftUI
 import WiFi_Optimizer
 
 struct OptimizationAdviceView: View {
-    let selectedNetwork: NetworkInfo?
+    @EnvironmentObject var scannerModel: ScannerModel
+    @Binding var selectedNetwork: NetworkInfo?
 
     private var advices: [AdviceSection] {
         buildAdvices(for: selectedNetwork)
@@ -57,9 +58,7 @@ struct OptimizationAdviceView: View {
                         }
 
                         if expandedAdvice == advice.id {
-                            Text(.init(advice.content)) // 使用 Markdown
-                                .font(.body)
-                                .lineSpacing(6)
+                            styledContent(for: advice.content)
                                 .padding(.top, 10)
                                 .padding(.horizontal, 4)
                                 .padding(.leading, 50) // Approximate indent
@@ -94,6 +93,22 @@ struct OptimizationAdviceView: View {
                 }
             }
         }
+    }
+
+    private func styledContent(for text: String) -> Text {
+        let components = text.components(separatedBy: "**")
+        var styledText = Text("")
+
+        for (index, component) in components.enumerated() {
+            if index % 2 == 1 {
+                styledText = styledText + Text(component)
+                    .fontWeight(.bold)
+                    .foregroundColor(.accentColor)
+            } else {
+                styledText = styledText + Text(component)
+            }
+        }
+        return styledText
     }
 }
 
@@ -158,25 +173,7 @@ private func buildAdvices(for network: NetworkInfo?) -> [AdviceSection] {
         AdviceSection(
             title: "频段和信道选择",
             icon: "wifi.circle",
-            content:
-                """
-                正确选择频段和信道是避免拥堵、提升速度的关键。
-
-                - **频段 (Band):**
-                  - **2.4 GHz:** 覆盖范围广，穿墙能力强，但速度较慢且非常拥挤，容易受到来自邻居 Wi-Fi 和其他家用电器的干扰。
-                  - **5 GHz:** 速度快得多，干扰少，但覆盖范围和穿墙能力不如 2.4 GHz。
-                  - **6 GHz (Wi-Fi 6E):** 速度最快，干扰极低，但需要路由器和终端设备都支持 Wi-Fi 6E。
-
-                  **优化技巧:**
-                  如果您的设备支持，请优先连接到 5 GHz 或 6 GHz 网络以获得最佳性能。将需要高速稳定连接的设备（如游戏机、智能电视）连接到这些频段。
-
-                - **信道 (Channel):**
-                  - **2.4 GHz:** 为避免信道重叠造成的干扰，请务必使用 **1, 6, 或 11** 这三个互不重叠的信道之一。
-                  - **5 GHz:** 信道选择更多，不易重叠。但需注意 **DFS (动态频率选择)** 信道。这些信道可能会被雷达（如气象雷达）占用，导致 Wi-Fi 临时中断。如果稳定性是首要考虑，可以选择非 DFS 信道。
-
-                  **优化技巧:**
-                  登录您的路由器管理界面，将信道设置从“自动”更改为推荐的固定信道。
-                """,
+            content: channelContent(network: network, quality: channelQuality),
             isActionable: channelQuality.isActionable,
             isExpanded: channelQuality.isActionable,
             highlightColor: channelQuality.color
@@ -257,6 +254,34 @@ private enum QualityLevel: Int, Comparable {
     var isActionable: Bool {
         return self >= .fair
     }
+}
+
+private func channelContent(network: NetworkInfo, quality: QualityResult) -> String {
+    let currentBand = network.band.rawValue
+    let currentChannel = network.channel
+    var advice = "您当前连接在 \(currentBand) 频段的信道 \(currentChannel) 上。\n"
+
+    if quality.isActionable {
+        if network.band == .twoPointFourGHz {
+            // TODO: This needs access to the scannerModel to provide a recommendation.
+            // This will be passed in a future step.
+            advice += "附近网络拥挤，建议在路由器管理界面尝试切换到不重叠的信道（1, 6, 11）之一以减少干扰。\n"
+        } else if network.band == .fiveGHz {
+            if (52...144).contains(network.channel) { // DFS Channels
+                advice += "您当前正在使用 DFS 信道。如果遇到连接中断，可能是雷达干扰所致。建议切换到非 DFS 信道（如 36-48 或 149-165）以提高稳定性。\n"
+            } else {
+                // TODO: This needs access to the scannerModel to provide a recommendation.
+                advice += "附近网络拥挤，建议在路由器管理界面尝试切换到其他信道以减少干扰。\n"
+            }
+        }
+    }
+
+    advice += """
+    - **2.4GHz 频段**: 穿透力强，覆盖范围广，但信道少（通常只有1、6、11互不重叠），容易受到蓝牙、微波炉等设备的干扰。
+    - **5GHz 频段**: 速度快，信道多，干扰少，但穿墙能力较弱，覆盖范围相对较小。
+    - **信道选择**: 尽量选择与邻近 Wi-Fi 网络使用不同或重叠较少的信道。在 2.4GHz 频段，优先选择 1、6、11。
+    """
+    return advice
 }
 
 private func qualityForRSSI(_ rssi: Int) -> QualityResult {

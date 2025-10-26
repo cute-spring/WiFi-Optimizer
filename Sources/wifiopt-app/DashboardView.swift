@@ -9,6 +9,7 @@ struct DashboardView: View {
     @EnvironmentObject var appState: AppState
     @State private var selectedView: ViewSelection = .graph
     @State private var selectedNetworkID: String? = nil
+    @State private var selectedNetwork: NetworkInfo? = nil
 
     enum ViewSelection: String, CaseIterable, Identifiable {
         case graph = "Graph"
@@ -91,7 +92,7 @@ struct DashboardView: View {
                         }
 
                     // New: Optimization Advice tab
-                    OptimizationAdviceView(selectedNetwork: model.networks.first(where: { $0.id == selectedNetworkID }) ?? model.networks.first(where: { $0.bssid == model.current?.bssid }))
+                    OptimizationAdviceView(selectedNetwork: $selectedNetwork)
                         .tabItem {
                             Label("优化建议", systemImage: "lightbulb")
                         }
@@ -123,7 +124,13 @@ struct DashboardView: View {
             }
         }
         .padding([.horizontal, .bottom], 16)
-        .onAppear { model.start() }
+        .onAppear {
+            model.start()
+            selectedNetwork = model.networks.first(where: { $0.bssid == model.current?.bssid })
+        }
+        .onChange(of: selectedNetworkID) { newValue in
+            selectedNetwork = model.networks.first(where: { $0.id == newValue })
+        }
         .onDisappear { model.stop() }
     }
 
