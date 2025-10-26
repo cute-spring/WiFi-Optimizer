@@ -84,12 +84,14 @@ struct DashboardView: View {
 
                     // New: Quality Reference tab
                     QualityReferenceView()
+                        .environmentObject(model)
                         .tabItem {
                             Label("质量参考", systemImage: "chart.bar.doc.horizontal")
                         }
 
                     // New: Optimization Advice tab
                     OptimizationAdviceView()
+                        .environmentObject(model)
                         .tabItem {
                             Label("优化建议", systemImage: "lightbulb")
                         }
