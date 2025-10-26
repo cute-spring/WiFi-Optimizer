@@ -32,7 +32,7 @@ struct OptimizationAdviceView: View {
             }
             .padding()
         }
-        .background(Color(NSColor.underPageBackgroundColor))
+        .background(Color.white)
     }
 
     private func styledContent(for text: String) -> Text {
@@ -100,12 +100,13 @@ struct AdviceCard: View {
                 .padding(.bottom, 12)
             }
         }
-        .background(Color(NSColor.windowBackgroundColor))
+        .background(Color.white)
         .overlay(
             RoundedRectangle(cornerRadius: 10)
-                .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
+                .stroke(Color.secondary.opacity(0.12), lineWidth: 1)
         )
         .cornerRadius(10)
+        .shadow(color: Color.black.opacity(0.06), radius: 8, x: 0, y: 4)
         .onAppear {
             self.isExpanded = section.isExpanded
         }
