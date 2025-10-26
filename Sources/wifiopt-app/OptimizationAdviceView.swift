@@ -4,7 +4,7 @@ import WiFi_Optimizer
 struct OptimizationAdviceView: View {
     @EnvironmentObject var scannerModel: ScannerModel
     @Binding var selectedNetwork: NetworkInfo?
-    @Environment(\.dismiss) private var dismiss
+    @Binding var isPresented: Bool
 
     @State private var expandedAdvice: String?
 
@@ -17,15 +17,12 @@ struct OptimizationAdviceView: View {
                         .font(.title)
                         .fontWeight(.bold)
                     Spacer()
-                    Button {
-                        dismiss()
-                    } label: {
+                    Button(action: { isPresented = false }) {
                         Image(systemName: "xmark.circle.fill")
+                            .font(.title2)
                             .foregroundColor(.secondary)
-                            .font(.system(size: 16, weight: .regular))
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("关闭")
+                    .buttonStyle(PlainButtonStyle())
                 }
                 .padding(.bottom, 8)
 
