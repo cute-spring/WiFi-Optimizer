@@ -70,36 +70,18 @@ struct ChannelGraphView: View {
 
     private func drawGrid(context: inout GraphicsContext, rect: CGRect) {
         let (minCh, maxCh, step) = channelRange()
-        // (Removed) old grid loop; unified into highlighted loop below
-        // Vertical grid + channel tick labels with highlighting
+        let gridColor = Color.secondary.opacity(0.2)
+        // Vertical grid + channel tick labels
         for ch in stride(from: minCh, through: maxCh, by: step) {
             let x = xForChannel(ch, in: rect)
-        
-            // Highlight preferred/non-DFS channels to improve readability
-            let isHighlight: Bool
-            switch band {
-            case .twoPointFourGHz:
-                isHighlight = [1, 6, 11].contains(ch)
-            case .fiveGHz:
-                isHighlight = (36...48).contains(ch) || (149...165).contains(ch)
-            case .sixGHz:
-                isHighlight = false
-            }
-        
-            let lineColor = isHighlight ? Color.primary.opacity(0.35) : Color.secondary.opacity(0.2)
-            let lineWidth: CGFloat = isHighlight ? 0.9 : 0.5
-        
             var path = Path()
             path.move(to: CGPoint(x: x, y: rect.minY))
             path.addLine(to: CGPoint(x: x, y: rect.maxY))
-            context.stroke(path, with: .color(lineColor), lineWidth: lineWidth)
-        
+            context.stroke(path, with: .color(gridColor), lineWidth: 0.5)
+
             // Tick label
-            let weight: Font.Weight = isHighlight ? .bold : .regular
-            let textColor: Color = isHighlight ? .primary : .secondary
-            let label = context.resolve(Text("\(ch)").font(.system(size: 9, weight: weight)).foregroundColor(textColor))
-            // 将顶部刻度画在画布内部，避免被 clipShape 裁剪
-            context.draw(label, at: CGPoint(x: x, y: rect.minY + 6), anchor: .top)
+            let label = context.resolve(Text("\(ch)").font(.system(size: 9)))
+            context.draw(label, at: CGPoint(x: x, y: rect.maxY + 10), anchor: .top)
         }
         // Baseline
         var base = Path()
@@ -141,7 +123,7 @@ struct ChannelGraphView: View {
             context.draw(label, at: CGPoint(x: centerX, y: crestY), anchor: .bottom)
 
             // Channel number below the main label
-            let channelLabel = context.resolve(Text("信道 \(n.channel)").font(.system(size: 9)).foregroundColor(.secondary))
+            let channelLabel = context.resolve(Text("Ch \(n.channel)").font(.system(size: 9)).foregroundColor(.secondary))
             context.draw(channelLabel, at: CGPoint(x: centerX, y: crestY + 12), anchor: .bottom)
         }
     }
