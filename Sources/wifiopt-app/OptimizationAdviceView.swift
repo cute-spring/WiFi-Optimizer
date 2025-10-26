@@ -2,10 +2,10 @@ import SwiftUI
 import WiFi_Optimizer
 
 struct OptimizationAdviceView: View {
-    @EnvironmentObject var model: ScannerModel
+    let selectedNetwork: NetworkInfo?
 
     private var advices: [AdviceSection] {
-        buildAdvices(for: model.currentNetwork)
+        buildAdvices(for: selectedNetwork)
     }
 
     @State private var expandedAdvice: UUID?
@@ -75,7 +75,7 @@ struct OptimizationAdviceView: View {
                 expandedAdvice = firstActionable.id
             }
         }
-        .onChange(of: model.currentNetwork) { _ in
+        .onChange(of: selectedNetwork) { _ in
             // Re-evaluate which advice to expand when the network changes
             if let firstActionable = advices.first(where: { $0.isActionable }) {
                 withAnimation(.easeInOut(duration: 0.25)) {
@@ -101,7 +101,7 @@ struct AdviceSection: Identifiable {
 }
 
 // swiftlint:disable:next file_length
-private func buildAdvices(for network: WiFiNetwork?) -> [AdviceSection] {
+private func buildAdvices(for network: NetworkInfo?) -> [AdviceSection] {
     guard let network = network else {
         // Return a default or empty state if no network is selected
         return [
@@ -119,7 +119,7 @@ private func buildAdvices(for network: WiFiNetwork?) -> [AdviceSection] {
     let snrQuality = qualityForSNR(network.snr)
     let channelQuality = qualityForChannel(network.channel, band: network.band)
     let securityQuality = qualityForSecurity(network.security)
-    let bandwidthQuality = qualityForBandwidth(network.channelWidth, band: network.band)
+    let bandwidthQuality = qualityForBandwidth(network.bandwidthMHz, band: network.band)
 
     let adviceList = [
         AdviceSection(
@@ -144,8 +144,8 @@ private func buildAdvices(for network: WiFiNetwork?) -> [AdviceSection] {
                   **优化技巧:**
                   SNR 是 RSSI 和噪声共同作用的结果。通过提升 RSSI 和降低噪声，您的 SNR 自然会得到改善。
                 """,
-            isActionable: [rssiQuality, noiseQuality, snrQuality].contains(where: { $0.isActionable })),
-            isExpanded: [rssiQuality, noiseQuality, snrQuality].contains(where: { $0.isActionable })),
+            isActionable: ([rssiQuality, noiseQuality, snrQuality] as [QualityResult]).contains(where: { $0.isActionable }),
+            isExpanded: ([rssiQuality, noiseQuality, snrQuality] as [QualityResult]).contains(where: { $0.isActionable }),
             highlightColor: poorestQuality(among: [rssiQuality, noiseQuality, snrQuality]).color
         ),
         AdviceSection(
@@ -239,8 +239,13 @@ private struct QualityResult {
     let isActionable: Bool
 }
 
-private enum QualityLevel: Int {
+private enum QualityLevel: Int, Comparable {
     case excellent, good, fair, poor, veryPoor
+
+    // Conformance to Comparable
+    static func < (lhs: QualityLevel, rhs: QualityLevel) -> Bool {
+        return lhs.rawValue < rhs.rawValue
+    }
 
     var isActionable: Bool {
         return self >= .fair
@@ -290,7 +295,7 @@ private func qualityForSNR(_ snr: Int) -> QualityResult {
     }
 }
 
-private func qualityForChannel(_ channel: Int, band: Band?) -> QualityResult {
+private func qualityForChannel(_ channel: Int, band: WiFiBand?) -> QualityResult {
     guard let band = band else {
         return .init(level: .fair, color: AppTheme.qualityFair, isActionable: true)
     }
@@ -313,23 +318,25 @@ private func qualityForChannel(_ channel: Int, band: Band?) -> QualityResult {
     }
 }
 
-private func qualityForSecurity(_ security: Security?) -> QualityResult {
+private func qualityForSecurity(_ security: String?) -> QualityResult {
     guard let security = security else {
         return .init(level: .veryPoor, color: AppTheme.qualityVeryPoor, isActionable: true)
     }
     switch security {
-    case .wpa3:
+    case "WPA3 Personal", "WPA3 Enterprise":
         return .init(level: .excellent, color: AppTheme.qualityExcellent, isActionable: false)
-    case .wpa2:
+    case "WPA2 Personal", "WPA2 Enterprise", "WPA2/WPA3 Personal":
         return .init(level: .good, color: AppTheme.qualityGood, isActionable: false)
-    case .wpa:
+    case "WPA Personal", "WPA/WPA2":
         return .init(level: .poor, color: AppTheme.qualityPoor, isActionable: true)
-    case .wep, .open:
+    case "WEP", "Open":
         return .init(level: .veryPoor, color: AppTheme.qualityVeryPoor, isActionable: true)
+    default:
+        return .init(level: .fair, color: AppTheme.qualityFair, isActionable: false) // Treat unknown as neutral
     }
 }
 
-private func qualityForBandwidth(_ width: Int?, band: Band?) -> QualityResult {
+private func qualityForBandwidth(_ width: Int?, band: WiFiBand?) -> QualityResult {
     guard let width = width, let band = band else {
         return .init(level: .fair, color: AppTheme.qualityFair, isActionable: false) // Neutral if unknown
     }
